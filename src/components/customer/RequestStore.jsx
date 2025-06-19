@@ -491,26 +491,36 @@ const navigate = useNavigate();
                   </div>
 
                   <div className="text-center">
+                  <button
+                    type="button"
+                    className="btn btn-lg text-white submit-btn"
+                    disabled={isLoading}
+                    onClick={handleSubmit}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="spinner-border spinner-border-sm me-2" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                        Đang Xử Lý...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane me-2"></i>
+                        Gửi Đăng Ký
+                      </>
+                    )}
+                  </button>
+                  <div className="mt-3">
                     <button
                       type="button"
-                      className="btn btn-lg text-white submit-btn"
-                      disabled={isLoading}
-                      onClick={handleSubmit}
+                      className="btn btn-lg btn-outline-secondary"
+                      onClick={() => navigate('/')}
                     >
-                      {isLoading ? (
-                        <>
-                          <div className="spinner-border spinner-border-sm me-2" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                          Đang Xử Lý...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-paper-plane me-2"></i>
-                          Gửi Đăng Ký
-                        </>
-                      )}
+                      <i className="fas fa-home me-2"></i>
+                      Quay Về Trang Chủ
                     </button>
+                  </div>
                   </div>
 
                   <div className="info-card">

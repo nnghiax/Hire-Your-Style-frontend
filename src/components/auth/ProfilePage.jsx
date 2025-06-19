@@ -66,7 +66,7 @@ export default function ProfilePage() {
       formData.append("address", JSON.stringify(address));
       if (avatar) formData.append("avatar", avatar);
 
-      const res = await axios.put("http://localhost:9999/user/update", formData, {
+      const res = await axios.put("https://hireyourstyle-backend.onrender.com/user/update", formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "multipart/form-data",

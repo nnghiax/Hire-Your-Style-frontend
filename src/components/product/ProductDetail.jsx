@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-
+import "../css/Light.css"
 const ProductDetail = () => {
   const [product, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
@@ -13,12 +13,42 @@ const ProductDetail = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const { productId } = useParams();
   const navigate = useNavigate();
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [gender, setGender] = useState('male');
+  const [size, setSize] = useState('');
+  const [rentDate, setRentDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
+
+  const calculateSize = () => {
+    const h = parseFloat(height) / 100;
+    const w = parseFloat(weight);
+    if (isNaN(h) || isNaN(w) || h === 0) return setSize("Dữ liệu không hợp lệ");
+
+    const bmi = w / (h * h);
+    let result = '';
+
+    if (gender === 'male') {
+      if (height < 160) result = bmi < 18.5 ? 'XS' : bmi < 25 ? 'S' : bmi < 30 ? 'M' : 'L';
+      else if (height < 170) result = bmi < 18.5 ? 'S' : bmi < 25 ? 'M' : bmi < 30 ? 'L' : 'XL';
+      else if (height < 180) result = bmi < 18.5 ? 'M' : bmi < 25 ? 'L' : bmi < 30 ? 'XL' : 'XXL';
+      else result = bmi < 18.5 ? 'L' : bmi < 25 ? 'XL' : bmi < 30 ? 'XXL' : 'XXXL';
+    } else {
+      if (height < 155) result = bmi < 18.5 ? 'XXS' : bmi < 25 ? 'XS' : bmi < 30 ? 'S' : 'M';
+      else if (height < 165) result = bmi < 18.5 ? 'XS' : bmi < 25 ? 'S' : bmi < 30 ? 'M' : 'L';
+      else if (height < 175) result = bmi < 18.5 ? 'S' : bmi < 25 ? 'M' : bmi < 30 ? 'L' : 'XL';
+      else result = bmi < 18.5 ? 'M' : bmi < 25 ? 'L' : bmi < 30 ? 'XL' : 'XXL';
+    }
+
+    setSize(result);
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(
-          `https://hireyourstyle-backend.onrender.com/product/detail/${productId}`,
+          `http://localhost:9999/product/detail/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -27,7 +57,6 @@ const ProductDetail = () => {
         );
         setProduct(res.data.data);
         setSelectedImage(res.data.data.image);
-        // Tự động chọn size đầu tiên nếu có
         if (res.data.data.sizes && res.data.data.sizes.length > 0) {
           setSelectedSize(res.data.data.sizes[0]);
         }
@@ -47,7 +76,6 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    // Kiểm tra xem người dùng đã đăng nhập chưa
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -55,13 +83,11 @@ const ProductDetail = () => {
       return;
     }
 
-    // Kiểm tra xem đã chọn size chưa
     if (!selectedSize) {
       alert("Vui lòng chọn kích thước!");
       return;
     }
 
-    // Kiểm tra số lượng
     if (quantity > product.quantity) {
       alert(`Chỉ còn ${product.quantity} sản phẩm trong kho!`);
       return;
@@ -71,11 +97,13 @@ const ProductDetail = () => {
 
     try {
       const response = await axios.post(
-        "https://hireyourstyle-backend.onrender.com/cart/add-to-cart",
+        "http://localhost:9999/cart/add-to-cart",
         {
           productId: productId,
           size: selectedSize,
           quantity: quantity,
+          rentDate: rentDate,
+          returnDate: returnDate,
         },
         {
           headers: {
@@ -87,22 +115,18 @@ const ProductDetail = () => {
 
       if (response.status === 201) {
         alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
-        // Chuyển hướng đến trang giỏ hàng
         navigate("/cart");
       }
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
 
       if (error.response) {
-        // Server trả về lỗi
         alert(
           error.response.data.message || "Có lỗi xảy ra khi thêm vào giỏ hàng!"
         );
       } else if (error.request) {
-        // Không có phản hồi từ server
         alert("Không thể kết nối đến server!");
       } else {
-        // Lỗi khác
         alert("Có lỗi xảy ra!");
       }
     } finally {
@@ -255,6 +279,20 @@ const ProductDetail = () => {
       display: inline-block;
       box-shadow: 0 3px 10px rgba(0,123,255,0.3);
     }
+    .date-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 5px;
+      transition: border-color 0.3s ease;
+    }
+    .date-input:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    }
   `;
 
   if (loading) {
@@ -273,7 +311,6 @@ const ProductDetail = () => {
       <div className="bg-light min-vh-100">
         <div className="container py-5">
           <div className="row">
-            {/* Image Gallery */}
             <div className="col-lg-6 mb-5">
               <div className="mb-4">
                 <img
@@ -281,17 +318,16 @@ const ProductDetail = () => {
                   alt={product.name}
                   className="img-fluid product-image-main"
                   style={{
-                    height: "80vh", // chiều cao lớn
-                    width: "auto", // chiều rộng tự động để giữ tỉ lệ gốc
-                    objectFit: "contain", // đảm bảo toàn bộ ảnh hiển thị
+                    height: "80vh",
+                    width: "auto",
+                    objectFit: "contain",
                     display: "block",
-                    margin: "0 auto", // căn giữa nếu cần
+                    margin: "0 auto",
                   }}
                 />
               </div>
             </div>
 
-            {/* Product Info */}
             <div className="col-lg-6">
               <div className="mb-4">
                 <h1 className="display-5 font-weight-bold text-dark mb-3">
@@ -329,21 +365,63 @@ const ProductDetail = () => {
                   <i className="fas fa-ruler me-2 text-primary"></i>Kích thước
                   <span className="text-danger">*</span>
                 </h5>
-                <div className="d-flex gap-3">
-                  {product.sizes &&
-                    product.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`btn size-option px-4 py-2 font-weight-bold ${
-                          selectedSize === size ? "active" : ""
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                <div className="size-section">
+                  <div className="d-flex gap-3">
+                    {product.sizes &&
+                      product.sizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`btn size-option px-4 py-2 font-weight-bold ${selectedSize === size ? "active" : ""
+                            }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                  </div>
+                  <button
+                    className="lightbulb-btn"
+                    onClick={() => setShowCalculator(!showCalculator)}
+                    title="Tính size"
+                  >
+                    💡
+                  </button>
                 </div>
               </div>
+
+              {showCalculator && (
+                <div className="calculator-card">
+                  <h2>Dự đoán Size Quần Áo</h2>
+
+                  <label>Giới tính:</label>
+                  <select value={gender} onChange={(e) => setGender(e.target.value)}>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                  </select>
+
+                  <label>Chiều cao (cm):</label>
+                  <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    placeholder="VD: 170"
+                  />
+
+                  <label>Cân nặng (kg):</label>
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="VD: 65"
+                  />
+
+                  <button onClick={calculateSize} className="submit-btn">
+                    Tính Size
+                  </button>
+
+                  {size && <div className="result">👉 Size phù hợp: <strong>{size}</strong></div>}
+                </div>
+              )}
 
               {/* Color */}
               <div className="mb-4">
@@ -397,6 +475,33 @@ const ProductDetail = () => {
                   </small>
                 </div>
 
+                {/* Rental Dates */}
+                <div className="mb-4">
+                  <h5 className="font-weight-bold text-dark mb-3">
+                    <i className="fas fa-calendar-alt me-2 text-primary"></i>Thời gian thuê
+                  </h5>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label>Ngày thuê:</label>
+                      <input
+                        type="date"
+                        className="date-input"
+                        value={rentDate}
+                        onChange={(e) => setRentDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label>Ngày trả:</label>
+                      <input
+                        type="date"
+                        className="date-input"
+                        value={returnDate}
+                        onChange={(e) => setReturnDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="d-flex gap-3">
                   <button
                     className="btn btn-primary btn-lg add-to-cart-btn flex-fill py-3"
@@ -404,7 +509,9 @@ const ProductDetail = () => {
                     disabled={
                       addingToCart ||
                       !product.isAvailable ||
-                      product.quantity <= 0
+                      product.quantity <= 0 ||
+                      !rentDate ||
+                      !returnDate
                     }
                   >
                     {addingToCart ? (
@@ -426,7 +533,6 @@ const ProductDetail = () => {
                   </button>
                 </div>
 
-                {/* Thông báo trạng thái sản phẩm */}
                 {!product.isAvailable && (
                   <div className="alert alert-warning mt-3">
                     <i className="fas fa-exclamation-triangle me-2"></i>
@@ -502,9 +608,8 @@ const ProductDetail = () => {
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`nav-link tab-button px-4 py-3 ${
-                          activeTab === tab.id ? "active" : ""
-                        }`}
+                        className={`nav-link tab-button px-4 py-3 ${activeTab === tab.id ? "active" : ""
+                          }`}
                       >
                         <i className={`${tab.icon} me-2`}></i>
                         {tab.label}

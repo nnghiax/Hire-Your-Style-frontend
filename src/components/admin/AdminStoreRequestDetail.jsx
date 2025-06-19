@@ -41,7 +41,7 @@ function AdminStoreRequestDetail() {
           return;
         }
 
-        const response = await axios.get(`http://localhost:9999/request/detail/${requestId}`, {
+        const response = await axios.get(`https://hireyourstyle-backend.onrender.com/request/detail/${requestId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -61,7 +61,7 @@ function AdminStoreRequestDetail() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:9999/request/approve/${requestId}`,
+        `https://hireyourstyle-backend.onrender.com/request/approve/${requestId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,7 +78,7 @@ function AdminStoreRequestDetail() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:9999/request/reject/${requestId}`,
+        `https://hireyourstyle-backend.onrender.com/request/reject/${requestId}`,
         {},
         { Authorization: `Bearer ${token}` } 
       );

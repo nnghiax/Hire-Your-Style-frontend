@@ -42,7 +42,7 @@ function AdminStoreRequest() {
           return;
         }
 
-        const response = await axios.get('http://localhost:9999/request/list', {
+        const response = await axios.get('https://hireyourstyle-backend.onrender.com/request/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -61,7 +61,7 @@ function AdminStoreRequest() {
   const handleDeleteRequest = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:9999/request/delete/${selectedRequestId}`, {
+      await axios.delete(`https://hireyourstyle-backend.onrender.com/request/delete/${selectedRequestId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStoreRequests(requests => requests.filter(r => r._id !== selectedRequestId));

@@ -34,7 +34,7 @@ function Register() {
         }
 
         try {
-            const response = await axios.post('http://localhost:9999/auth/register', {
+            const response = await axios.post('https://hireyourstyle-backend.onrender.com/auth/register', {
                 name,
                 email,
                 password,

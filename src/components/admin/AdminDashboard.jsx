@@ -80,22 +80,22 @@ function AdminDashboard() {
           yearlyByStoreRes,
         ] = await Promise.all([
           axios
-            .get("http://localhost:9999/revenue/admin/commission", {
+            .get("https://hireyourstyle-backend.onrender.com/revenue/admin/commission", {
               headers: { Authorization: `Bearer ${token}` },
             })
             .catch(() => ({ data: { data: {} } })),
           axios
-            .get("http://localhost:9999/revenue/admin/weekly-commission", {
+            .get("https://hireyourstyle-backend.onrender.com/revenue/admin/weekly-commission", {
               headers: { Authorization: `Bearer ${token}` },
             })
             .catch(() => ({ data: { data: {} } })),
-          axios.get("http://localhost:9999/revenue/admin/daily-by-store", {
+          axios.get("https://hireyourstyle-backend.onrender.com/revenue/admin/daily-by-store", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:9999/revenue/admin/monthly-by-store", {
+          axios.get("https://hireyourstyle-backend.onrender.com/revenue/admin/monthly-by-store", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:9999/revenue/admin/yearly-by-store", {
+          axios.get("https://hireyourstyle-backend.onrender.com/revenue/admin/yearly-by-store", {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);

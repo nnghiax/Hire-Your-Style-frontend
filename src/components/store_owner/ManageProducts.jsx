@@ -52,13 +52,13 @@ function ManageProducts() {
         }
 
         const [storeRes, productRes, categoryRes] = await Promise.all([
-          axios.get('http://localhost:9999/store/list', {
+          axios.get('https://hireyourstyle-backend.onrender.com/store/list', {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => ({ data: { data: [] } })),
-          axios.get('http://localhost:9999/product/list', {
+          axios.get('https://hireyourstyle-backend.onrender.com/product/list', {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => ({ data: { data: [] } })),
-          axios.get('http://localhost:9999/cate/list', {
+          axios.get('https://hireyourstyle-backend.onrender.com/cate/list', {
             headers: { Authorization: `Bearer ${token}` },
           }).catch(() => ({ data: { data: [] } })),
         ]);
@@ -159,13 +159,13 @@ function ManageProducts() {
     try {
       const token = localStorage.getItem('token');
       if (isEdit) {
-        const res = await axios.put(`http://localhost:9999/product/update/${selectedProduct._id}`, form, {
+        const res = await axios.put(`https://hireyourstyle-backend.onrender.com/product/update/${selectedProduct._id}`, form, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
         setProducts(products.map(p => (p._id === selectedProduct._id ? res.data.data : p)));
         showSuccessMessage('Cập nhật sản phẩm thành công!'); 
       } else {
-        const res = await axios.post('http://localhost:9999/product/create', form, {
+        const res = await axios.post('https://hireyourstyle-backend.onrender.com/product/create', form, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
         });
         setProducts([...products, res.data.data]);
@@ -182,7 +182,7 @@ function ManageProducts() {
   const handleDelete = async (proId) => {
     if (window.confirm('Bạn có chắc muốn xóa sản phẩm này không?')) {
       try {
-        await axios.delete(`http://localhost:9999/product/delete/${proId}`, {
+        await axios.delete(`https://hireyourstyle-backend.onrender.com/product/delete/${proId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         setProducts(products.filter(p => p._id !== proId));

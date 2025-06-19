@@ -21,7 +21,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("http://localhost:9999/user/profile", {
+        const res = await axios.get("https://hireyourstyle-backend.onrender.com/user/profile", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

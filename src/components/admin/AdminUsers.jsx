@@ -31,7 +31,7 @@ function AdminUsers() {
           return;
         }
 
-        const response = await axios.get("http://localhost:9999/admin/users", {
+        const response = await axios.get("https://hireyourstyle-backend.onrender.com/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const {
@@ -58,7 +58,7 @@ function AdminUsers() {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "http://localhost:9999/admin/users/availability",
+        "https://hireyourstyle-backend.onrender.com/admin/users/availability",
         { userId, isAvailable: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

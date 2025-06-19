@@ -19,7 +19,7 @@ function Login() {
     }
 
     try {
-      const res = await axios.post('http://localhost:9999/auth/login', { email, password });
+      const res = await axios.post('https://hireyourstyle-backend.onrender.com/auth/login', { email, password });
       if (res.status === 200) {
         localStorage.setItem('user', JSON.stringify(res.data.user));
         localStorage.setItem('token', res.data.accessToken);

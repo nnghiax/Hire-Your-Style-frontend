@@ -33,11 +33,11 @@ const StoreOwnerRevenueDashboard = () => {
       console.log('Fetching data with params:', params);
 
       const [totalRes, detailsRes, dailyRes, monthlyRes, quarterlyRes] = await Promise.all([
-        axios.get('http://localhost:9999/revenue/total', { headers: { Authorization: `Bearer ${token}` }, params }),
-        axios.get('http://localhost:9999/revenue/details', { headers: { Authorization: `Bearer ${token}` }, params }),
-        axios.get('http://localhost:9999/revenue/daily', { headers: { Authorization: `Bearer ${token}` }, params }),
-        axios.get('http://localhost:9999/revenue/monthly', { headers: { Authorization: `Bearer ${token}` }, params }),
-        axios.get('http://localhost:9999/revenue/quarterly', { headers: { Authorization: `Bearer ${token}` }, params }),
+        axios.get('https://hireyourstyle-backend.onrender.com/revenue/total', { headers: { Authorization: `Bearer ${token}` }, params }),
+        axios.get('https://hireyourstyle-backend.onrender.com/revenue/details', { headers: { Authorization: `Bearer ${token}` }, params }),
+        axios.get('https://hireyourstyle-backend.onrender.com/revenue/daily', { headers: { Authorization: `Bearer ${token}` }, params }),
+        axios.get('https://hireyourstyle-backend.onrender.com/revenue/monthly', { headers: { Authorization: `Bearer ${token}` }, params }),
+        axios.get('https://hireyourstyle-backend.onrender.com/revenue/quarterly', { headers: { Authorization: `Bearer ${token}` }, params }),
       ]);
 
       console.log('Details Response:', detailsRes.data);

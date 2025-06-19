@@ -23,7 +23,7 @@ export default function StoreOwnerProfile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("http://localhost:9999/user/profile", {
+        const res = await axios.get("https://hireyourstyle-backend.onrender.com/user/profile", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -68,7 +68,7 @@ export default function StoreOwnerProfile() {
       formData.append("address", JSON.stringify(address));
       if (avatar) formData.append("avatar", avatar);
 
-      const res = await axios.put("http://localhost:9999/user/update", formData, {
+      const res = await axios.put("https://hireyourstyle-backend.onrender.com/user/update", formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "multipart/form-data",

@@ -42,7 +42,7 @@ function AdminProduct() {
           return;
         }
 
-        const lowRatedRes = await axios.get('http://localhost:9999/admin/products/low-rated', {
+        const lowRatedRes = await axios.get('https://hireyourstyle-backend.onrender.com/admin/products/low-rated', {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => ({ data: { data: [] } }));
 
@@ -62,7 +62,7 @@ function AdminProduct() {
     try {
       const token = localStorage.getItem('token');
       await axios.patch(
-        `http://localhost:9999/admin/products/${productId}/visibility`,
+        `https://hireyourstyle-backend.onrender.com/admin/products/${productId}/visibility`,
         { isAvailable: !isAvailable },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -18,8 +18,6 @@ const ProductDetail = () => {
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('male');
   const [size, setSize] = useState('');
-  const [rentDate, setRentDate] = useState('');
-  const [returnDate, setReturnDate] = useState('');
 
   const calculateSize = () => {
     const h = parseFloat(height) / 100;
@@ -44,6 +42,7 @@ const ProductDetail = () => {
     setSize(result);
   };
 
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -57,6 +56,7 @@ const ProductDetail = () => {
         );
         setProduct(res.data.data);
         setSelectedImage(res.data.data.image);
+        // Tự động chọn size đầu tiên nếu có
         if (res.data.data.sizes && res.data.data.sizes.length > 0) {
           setSelectedSize(res.data.data.sizes[0]);
         }
@@ -76,6 +76,7 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -83,11 +84,13 @@ const ProductDetail = () => {
       return;
     }
 
+    // Kiểm tra xem đã chọn size chưa
     if (!selectedSize) {
       alert("Vui lòng chọn kích thước!");
       return;
     }
 
+    // Kiểm tra số lượng
     if (quantity > product.quantity) {
       alert(`Chỉ còn ${product.quantity} sản phẩm trong kho!`);
       return;
@@ -102,8 +105,6 @@ const ProductDetail = () => {
           productId: productId,
           size: selectedSize,
           quantity: quantity,
-          rentDate: rentDate,
-          returnDate: returnDate,
         },
         {
           headers: {
@@ -115,18 +116,22 @@ const ProductDetail = () => {
 
       if (response.status === 201) {
         alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+        // Chuyển hướng đến trang giỏ hàng
         navigate("/cart");
       }
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
 
       if (error.response) {
+        // Server trả về lỗi
         alert(
           error.response.data.message || "Có lỗi xảy ra khi thêm vào giỏ hàng!"
         );
       } else if (error.request) {
+        // Không có phản hồi từ server
         alert("Không thể kết nối đến server!");
       } else {
+        // Lỗi khác
         alert("Có lỗi xảy ra!");
       }
     } finally {
@@ -279,20 +284,6 @@ const ProductDetail = () => {
       display: inline-block;
       box-shadow: 0 3px 10px rgba(0,123,255,0.3);
     }
-    .date-input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      font-size: 16px;
-      margin-top: 5px;
-      transition: border-color 0.3s ease;
-    }
-    .date-input:focus {
-      border-color: #007bff;
-      outline: none;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-    }
   `;
 
   if (loading) {
@@ -311,6 +302,7 @@ const ProductDetail = () => {
       <div className="bg-light min-vh-100">
         <div className="container py-5">
           <div className="row">
+            {/* Image Gallery */}
             <div className="col-lg-6 mb-5">
               <div className="mb-4">
                 <img
@@ -318,16 +310,17 @@ const ProductDetail = () => {
                   alt={product.name}
                   className="img-fluid product-image-main"
                   style={{
-                    height: "80vh",
-                    width: "auto",
-                    objectFit: "contain",
+                    height: "80vh", // chiều cao lớn
+                    width: "auto", // chiều rộng tự động để giữ tỉ lệ gốc
+                    objectFit: "contain", // đảm bảo toàn bộ ảnh hiển thị
                     display: "block",
-                    margin: "0 auto",
+                    margin: "0 auto", // căn giữa nếu cần
                   }}
                 />
               </div>
             </div>
 
+            {/* Product Info */}
             <div className="col-lg-6">
               <div className="mb-4">
                 <h1 className="display-5 font-weight-bold text-dark mb-3">
@@ -474,29 +467,58 @@ const ProductDetail = () => {
                     Còn lại: <strong>{product.quantity}</strong> sản phẩm
                   </small>
                 </div>
-
                 {/* Rental Dates */}
-                <div className="mb-4">
-                  <h5 className="font-weight-bold text-dark mb-3">
-                    <i className="fas fa-calendar-alt me-2 text-primary"></i>Thời gian thuê
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{ fontWeight: 'bold', color: '#000000', marginBottom: '0.75rem' }}>
+                    <i style={{ marginRight: '0.5rem', color: '#007bff' }} className="fas fa-calendar-alt"></i>Thời gian thuê
                   </h5>
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label>Ngày thuê:</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', marginRight: '-0.75rem', marginLeft: '-0.75rem' }}>
+                    <div style={{ flex: '0 0 50%', maxWidth: '50%', paddingRight: '0.75rem', paddingLeft: '0.75rem', marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>Ngày thuê:</label>
                       <input
                         type="date"
-                        className="date-input"
-                        value={rentDate}
-                        onChange={(e) => setRentDate(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.5rem',
+                          fontSize: '1rem',
+                          marginTop: '0.25rem',
+                          transition: 'border-color 0.3s ease',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#007bff';
+                          e.target.style.boxShadow = '0 0 5px rgba(0, 123, 255, 0.3)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#dee2e6';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label>Ngày trả:</label>
+                    <div style={{ flex: '0 0 50%', maxWidth: '50%', paddingRight: '0.75rem', paddingLeft: '0.75rem', marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>Ngày trả:</label>
                       <input
                         type="date"
-                        className="date-input"
-                        value={returnDate}
-                        onChange={(e) => setReturnDate(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.5rem',
+                          fontSize: '1rem',
+                          marginTop: '0.25rem',
+                          transition: 'border-color 0.3s ease',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#007bff';
+                          e.target.style.boxShadow = '0 0 5px rgba(0, 123, 255, 0.3)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#dee2e6';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
                   </div>
@@ -509,9 +531,7 @@ const ProductDetail = () => {
                     disabled={
                       addingToCart ||
                       !product.isAvailable ||
-                      product.quantity <= 0 ||
-                      !rentDate ||
-                      !returnDate
+                      product.quantity <= 0
                     }
                   >
                     {addingToCart ? (
@@ -533,6 +553,7 @@ const ProductDetail = () => {
                   </button>
                 </div>
 
+                {/* Thông báo trạng thái sản phẩm */}
                 {!product.isAvailable && (
                   <div className="alert alert-warning mt-3">
                     <i className="fas fa-exclamation-triangle me-2"></i>

@@ -462,6 +462,7 @@ export default function Header() {
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
                         <Dropdown.Item href="/profile">Hồ sơ</Dropdown.Item>
+                        <Dropdown.Item href="/request">Đăng kí kinh doanh</Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout}>
                           Đăng xuất
                         </Dropdown.Item>

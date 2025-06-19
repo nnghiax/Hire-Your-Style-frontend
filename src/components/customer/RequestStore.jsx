@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+import { useNavigate} from "react-router-dom";
 const RequestStore = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -17,7 +17,7 @@ const RequestStore = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitStatus, setSubmitStatus] = useState('');
-
+const navigate = useNavigate();
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -105,7 +105,9 @@ const RequestStore = () => {
           phone: ''
         });
         console.log('Success:', response.data.message);
+        navigate("/");
       }
+
     } catch (error) {
       setSubmitStatus('error');
       

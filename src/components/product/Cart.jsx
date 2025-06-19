@@ -15,12 +15,15 @@ const ShoppingCart = ({ userId }) => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực");
 
-      const response = await axios.get("http://localhost:9999/cart/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.get(
+        "https://hireyourstyle-backend.onrender.com/cart/list",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = response.data.data || response.data || [];
       setCartData(data);
@@ -69,16 +72,20 @@ const ShoppingCart = ({ userId }) => {
         amount: total,
         description: "Hire Your Style",
         orderCode: Date.now(),
-        returnUrl: "http://localhost:5173/cart?success=true",
-        cancelUrl: "http://localhost:5173/cart?success=false",
+        returnUrl: "https://hire-your-style-frontend.vercel.app/?success=true",
+        cancelUrl: "https://hire-your-style-frontend.vercel.app/?success=false",
       };
 
-      const response = await axios.post("http://localhost:9999/payos", order, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await axios.post(
+        "https://hireyourstyle-backend.onrender.com/payos",
+        order,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       const checkoutUrl = response.data?.checkoutUrl;
       if (checkoutUrl) window.location.href = checkoutUrl;
@@ -104,7 +111,7 @@ const ShoppingCart = ({ userId }) => {
     );
 
     await axios.put(
-      `http://localhost:9999/cart/update-quantity/${itemId}`,
+      `https://hireyourstyle-backend.onrender.com/cart/update-quantity/${itemId}`,
       { quantity: newQuantity },
       {
         headers: {
@@ -119,12 +126,15 @@ const ShoppingCart = ({ userId }) => {
     setCartData((prev) => prev.filter((item) => item._id !== itemId));
     setSelectedItems((prev) => prev.filter((id) => id !== itemId));
 
-    await axios.delete(`http://localhost:9999/cart/delete/${itemId}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    await axios.delete(
+      `https://hireyourstyle-backend.onrender.com/cart/delete/${itemId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
   };
 
   const formatPrice = (price) =>

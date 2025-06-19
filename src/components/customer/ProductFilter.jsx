@@ -248,11 +248,14 @@ function ProductFilter({ headerProducts }) {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:9999/product/list", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const res = await axios.get(
+        "https://hire-your-style-frontend.vercel.app/product/list",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       setProducts(res.data.data);
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm:", error);

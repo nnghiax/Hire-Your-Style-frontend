@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-
+import "../css/Light.css"
 const ProductDetail = () => {
   const [product, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,35 @@ const ProductDetail = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const { productId } = useParams();
   const navigate = useNavigate();
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [gender, setGender] = useState('male');
+  const [size, setSize] = useState('');
+
+  const calculateSize = () => {
+    const h = parseFloat(height) / 100;
+    const w = parseFloat(weight);
+    if (isNaN(h) || isNaN(w) || h === 0) return setSize("Dữ liệu không hợp lệ");
+
+    const bmi = w / (h * h);
+    let result = '';
+
+    if (gender === 'male') {
+      if (height < 160) result = bmi < 18.5 ? 'XS' : bmi < 25 ? 'S' : bmi < 30 ? 'M' : 'L';
+      else if (height < 170) result = bmi < 18.5 ? 'S' : bmi < 25 ? 'M' : bmi < 30 ? 'L' : 'XL';
+      else if (height < 180) result = bmi < 18.5 ? 'M' : bmi < 25 ? 'L' : bmi < 30 ? 'XL' : 'XXL';
+      else result = bmi < 18.5 ? 'L' : bmi < 25 ? 'XL' : bmi < 30 ? 'XXL' : 'XXXL';
+    } else {
+      if (height < 155) result = bmi < 18.5 ? 'XXS' : bmi < 25 ? 'XS' : bmi < 30 ? 'S' : 'M';
+      else if (height < 165) result = bmi < 18.5 ? 'XS' : bmi < 25 ? 'S' : bmi < 30 ? 'M' : 'L';
+      else if (height < 175) result = bmi < 18.5 ? 'S' : bmi < 25 ? 'M' : bmi < 30 ? 'L' : 'XL';
+      else result = bmi < 18.5 ? 'M' : bmi < 25 ? 'L' : bmi < 30 ? 'XL' : 'XXL';
+    }
+
+    setSize(result);
+  };
+
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -329,21 +358,63 @@ const ProductDetail = () => {
                   <i className="fas fa-ruler me-2 text-primary"></i>Kích thước
                   <span className="text-danger">*</span>
                 </h5>
-                <div className="d-flex gap-3">
-                  {product.sizes &&
-                    product.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`btn size-option px-4 py-2 font-weight-bold ${
-                          selectedSize === size ? "active" : ""
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                <div className="size-section">
+                  <div className="d-flex gap-3">
+                    {product.sizes &&
+                      product.sizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`btn size-option px-4 py-2 font-weight-bold ${selectedSize === size ? "active" : ""
+                            }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                  </div>
+                  <button
+                    className="lightbulb-btn"
+                    onClick={() => setShowCalculator(!showCalculator)}
+                    title="Tính size"
+                  >
+                    💡
+                  </button>
                 </div>
               </div>
+
+              {showCalculator && (
+                <div className="calculator-card">
+                  <h2>Dự đoán Size Quần Áo</h2>
+
+                  <label>Giới tính:</label>
+                  <select value={gender} onChange={(e) => setGender(e.target.value)}>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                  </select>
+
+                  <label>Chiều cao (cm):</label>
+                  <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    placeholder="VD: 170"
+                  />
+
+                  <label>Cân nặng (kg):</label>
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="VD: 65"
+                  />
+
+                  <button onClick={calculateSize} className="submit-btn">
+                    Tính Size
+                  </button>
+
+                  {size && <div className="result">👉 Size phù hợp: <strong>{size}</strong></div>}
+                </div>
+              )}
 
               {/* Color */}
               <div className="mb-4">
@@ -395,6 +466,62 @@ const ProductDetail = () => {
                   <small className="text-muted">
                     Còn lại: <strong>{product.quantity}</strong> sản phẩm
                   </small>
+                </div>
+                {/* Rental Dates */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <h5 style={{ fontWeight: 'bold', color: '#000000', marginBottom: '0.75rem' }}>
+                    <i style={{ marginRight: '0.5rem', color: '#007bff' }} className="fas fa-calendar-alt"></i>Thời gian thuê
+                  </h5>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', marginRight: '-0.75rem', marginLeft: '-0.75rem' }}>
+                    <div style={{ flex: '0 0 50%', maxWidth: '50%', paddingRight: '0.75rem', paddingLeft: '0.75rem', marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>Ngày thuê:</label>
+                      <input
+                        type="date"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.5rem',
+                          fontSize: '1rem',
+                          marginTop: '0.25rem',
+                          transition: 'border-color 0.3s ease',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#007bff';
+                          e.target.style.boxShadow = '0 0 5px rgba(0, 123, 255, 0.3)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#dee2e6';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: '0 0 50%', maxWidth: '50%', paddingRight: '0.75rem', paddingLeft: '0.75rem', marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.25rem' }}>Ngày trả:</label>
+                      <input
+                        type="date"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '0.5rem',
+                          fontSize: '1rem',
+                          marginTop: '0.25rem',
+                          transition: 'border-color 0.3s ease',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#007bff';
+                          e.target.style.boxShadow = '0 0 5px rgba(0, 123, 255, 0.3)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#dee2e6';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="d-flex gap-3">
@@ -502,9 +629,8 @@ const ProductDetail = () => {
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`nav-link tab-button px-4 py-3 ${
-                          activeTab === tab.id ? "active" : ""
-                        }`}
+                        className={`nav-link tab-button px-4 py-3 ${activeTab === tab.id ? "active" : ""
+                          }`}
                       >
                         <i className={`${tab.icon} me-2`}></i>
                         {tab.label}

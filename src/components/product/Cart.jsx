@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../css/Cart.css"; // Import your custom CSS for styling
+
 const ShoppingCart = ({ userId }) => {
   const [cartData, setCartData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Thêm state cho rental dates
+  const [rentalDate, setRentalDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
 
   const fetchCartData = async () => {
     try {
@@ -15,15 +20,12 @@ const ShoppingCart = ({ userId }) => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực");
 
-      const response = await axios.get(
-        "https://hireyourstyle-backend.onrender.com/cart/list",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.get("http://localhost:9999/cart/list", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = response.data.data || response.data || [];
       setCartData(data);
@@ -52,7 +54,20 @@ const ShoppingCart = ({ userId }) => {
     }
   };
 
-  const getItemTotal = (item) => item.quantity * (item.price || 0);
+  // Tính số ngày thuê
+  const getRentalDays = () => {
+    if (!rentalDate || !returnDate) return 1;
+    const startDate = new Date(rentalDate);
+    const endDate = new Date(returnDate);
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays || 1; // Ít nhất 1 ngày
+  };
+
+  const rentalDays = getRentalDays();
+
+  // Tính tổng tiền cho từng item (price * quantity * số ngày thuê)
+  const getItemTotal = (item) => (item.price || 0) * item.quantity * rentalDays;
 
   const getSubtotal = () => {
     return cartData.reduce((total, item) => {
@@ -68,30 +83,108 @@ const ShoppingCart = ({ userId }) => {
 
   const handlePayment = async () => {
     try {
-      const order = {
-        amount: total,
-        description: "Hire Your Style",
-        orderCode: Date.now(),
-        returnUrl: "https://hire-your-style-frontend.vercel.app/?success=true",
-        cancelUrl: "https://hire-your-style-frontend.vercel.app/?success=false",
-      };
+      // Validate rental dates
+      if (!rentalDate || !returnDate) {
+        alert("Vui lòng chọn ngày thuê và ngày trả");
+        return;
+      }
 
-      const response = await axios.post(
-        "https://hireyourstyle-backend.onrender.com/payos",
-        order,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      if (new Date(rentalDate) >= new Date(returnDate)) {
+        alert("Ngày trả phải sau ngày thuê");
+        return;
+      }
+
+      // Chuẩn bị dữ liệu rental
+      const selectedCartItems = cartData.filter((item) =>
+        selectedItems.includes(item._id)
       );
 
+      const rentalData = {
+        items: selectedCartItems.map((item) => ({
+          productId: item.productId || item._id,
+          storeId: item.storeId,
+          size: item.size,
+          quantity: item.quantity,
+        })),
+        rentalDate: new Date(rentalDate),
+        returnDate: new Date(returnDate),
+        totalAmount: total,
+        cartItemIds: selectedItems, // Để xóa khỏi cart sau khi thành công
+      };
+
+      const order = {
+        amount: total,
+        description: `HireYourStyle Thuê ${rentalDays} ngày`,
+        orderCode: Date.now(),
+        returnUrl: `http://localhost:5173/cart?success=true&rentalData=${encodeURIComponent(
+          JSON.stringify(rentalData)
+        )}`,
+        cancelUrl: "http://localhost:5173/cart?success=false",
+        rentalData: rentalData, // Gửi kèm dữ liệu rental
+      };
+
+      const response = await axios.post("http://localhost:9999/payos", order, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
       const checkoutUrl = response.data?.checkoutUrl;
-      if (checkoutUrl) window.location.href = checkoutUrl;
-      else throw new Error("Không nhận được URL thanh toán.");
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error("Không nhận được URL thanh toán.");
+      }
     } catch (error) {
+      console.error("Payment error:", error);
       alert("Lỗi khi xử lý thanh toán. Vui lòng thử lại sau.");
+    }
+  };
+
+  // Kiểm tra payment success từ URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get("success");
+    const rentalDataParam = urlParams.get("rentalData");
+
+    if (success === "true" && rentalDataParam) {
+      try {
+        const rentalData = JSON.parse(decodeURIComponent(rentalDataParam));
+        handlePaymentSuccess(rentalData);
+      } catch (error) {
+        console.error("Error parsing rental data:", error);
+      }
+    }
+  }, []);
+
+  const handlePaymentSuccess = async (rentalData) => {
+    try {
+      // Tạo rental record
+      await axios.post("http://localhost:9999/rental/create", rentalData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      // Xóa items đã thanh toán khỏi cart
+      for (const itemId of rentalData.cartItemIds) {
+        await axios.delete(`http://localhost:9999/cart/delete/${itemId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+      }
+
+      alert("Thanh toán thành công! Đơn thuê của bạn đã được tạo.");
+      fetchCartData(); // Refresh cart
+
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error) {
+      console.error("Error creating rental:", error);
+      alert("Có lỗi xảy ra khi tạo đơn thuê. Vui lòng liên hệ hỗ trợ.");
     }
   };
 
@@ -110,31 +203,64 @@ const ShoppingCart = ({ userId }) => {
       )
     );
 
-    await axios.put(
-      `https://hireyourstyle-backend.onrender.com/cart/update-quantity/${itemId}`,
-      { quantity: newQuantity },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
+    try {
+      await axios.put(
+        `http://localhost:9999/cart/update-quantity/${itemId}`,
+        { quantity: newQuantity },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      // Revert lại state nếu API call thất bại
+      setCartData((prev) =>
+        prev.map((item) =>
+          item._id === itemId ? { ...item, quantity: item.quantity } : item
+        )
+      );
+    }
+  };
+
+  // Thêm function để xử lý thay đổi quantity từ input
+  const handleQuantityInputChange = async (itemId, newQuantity) => {
+    const quantity = Math.max(1, parseInt(newQuantity) || 1);
+
+    setCartData((prev) =>
+      prev.map((item) =>
+        item._id === itemId ? { ...item, quantity: quantity } : item
+      )
     );
+
+    try {
+      await axios.put(
+        `http://localhost:9999/cart/update-quantity/${itemId}`,
+        { quantity: quantity },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
   };
 
   const removeItem = async (itemId) => {
     setCartData((prev) => prev.filter((item) => item._id !== itemId));
     setSelectedItems((prev) => prev.filter((id) => id !== itemId));
 
-    await axios.delete(
-      `https://hireyourstyle-backend.onrender.com/cart/delete/${itemId}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+    await axios.delete(`http://localhost:9999/cart/delete/${itemId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
   };
 
   const formatPrice = (price) =>
@@ -196,24 +322,73 @@ const ShoppingCart = ({ userId }) => {
                         <div className="flex-grow-1">
                           <h6>{item.name}</h6>
                           <p className="mb-1 text-muted">Size: {item.size}</p>
-                          <strong>{formatPrice(item.price)}</strong>
+                          <div className="mb-1">
+                            <strong>{formatPrice(item.price)}/ngày</strong>
+                          </div>
+                          {rentalDays > 1 && (
+                            <small className="text-info">
+                              Tổng {rentalDays} ngày:{" "}
+                              {formatPrice(item.price * rentalDays)}
+                            </small>
+                          )}
                         </div>
-                        <div className="me-3 d-flex align-items-center">
+
+                        {/* Quantity Controls */}
+                        <div
+                          className="me-3 d-flex align-items-center"
+                          style={{ minWidth: "120px" }}
+                        >
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => updateQuantity(item._id, -1)}
                             disabled={item.quantity <= 1}
+                            style={{ width: "30px", height: "30px" }}
                           >
                             -
                           </button>
-                          <span className="mx-2">{item.quantity}</span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleQuantityInputChange(
+                                item._id,
+                                e.target.value
+                              )
+                            }
+                            className="form-control mx-2 text-center"
+                            style={{
+                              width: "50px",
+                              height: "30px",
+                              fontSize: "14px",
+                            }}
+                          />
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => updateQuantity(item._id, 1)}
+                            style={{ width: "30px", height: "30px" }}
                           >
                             +
                           </button>
                         </div>
+
+                        {/* Item Total */}
+                        <div
+                          className="me-3 text-end"
+                          style={{ minWidth: "100px" }}
+                        >
+                          <strong className="text-success">
+                            {formatPrice(getItemTotal(item))}
+                          </strong>
+                          {rentalDays > 1 && (
+                            <div>
+                              <small className="text-muted">
+                                {item.quantity} × {rentalDays} ngày
+                              </small>
+                            </div>
+                          )}
+                        </div>
+
                         <button
                           className="btn btn-sm btn-outline-danger"
                           onClick={() => removeItem(item._id)}
@@ -235,6 +410,106 @@ const ShoppingCart = ({ userId }) => {
             <div className="card mb-4">
               <div className="card-header">Tổng đơn hàng</div>
               <div className="card-body">
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    marginRight: "-0.75rem",
+                    marginLeft: "-0.75rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: "0 0 50%",
+                      maxWidth: "50%",
+                      paddingRight: "0.75rem",
+                      paddingLeft: "0.75rem",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
+                    <label
+                      style={{ display: "block", marginBottom: "0.25rem" }}
+                    >
+                      Ngày thuê: *
+                    </label>
+                    <input
+                      type="date"
+                      value={rentalDate}
+                      onChange={(e) => setRentalDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "0.5rem",
+                        fontSize: "1rem",
+                        marginTop: "0.25rem",
+                        transition: "border-color 0.3s ease",
+                        outline: "none",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#007bff";
+                        e.target.style.boxShadow =
+                          "0 0 5px rgba(0, 123, 255, 0.3)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#dee2e6";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      flex: "0 0 50%",
+                      maxWidth: "50%",
+                      paddingRight: "0.75rem",
+                      paddingLeft: "0.75rem",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
+                    <label
+                      style={{ display: "block", marginBottom: "0.25rem" }}
+                    >
+                      Ngày trả: *
+                    </label>
+                    <input
+                      type="date"
+                      value={returnDate}
+                      onChange={(e) => setReturnDate(e.target.value)}
+                      min={rentalDate || new Date().toISOString().split("T")[0]}
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "0.5rem",
+                        fontSize: "1rem",
+                        marginTop: "0.25rem",
+                        transition: "border-color 0.3s ease",
+                        outline: "none",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#007bff";
+                        e.target.style.boxShadow =
+                          "0 0 5px rgba(0, 123, 255, 0.3)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#dee2e6";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {rentalDays > 1 && (
+                  <div className="alert alert-info py-2 mb-3">
+                    <small>
+                      <i className="fas fa-info-circle me-1"></i>
+                      Thuê trong {rentalDays} ngày
+                    </small>
+                  </div>
+                )}
+
                 <p className="d-flex justify-content-between">
                   <span>Tạm tính:</span>
                   <strong>{formatPrice(subtotal)}</strong>
@@ -250,12 +525,14 @@ const ShoppingCart = ({ userId }) => {
                 </p>
                 <button
                   className={`btn btn-block ${
-                    selectedItems.length === 0
+                    selectedItems.length === 0 || !rentalDate || !returnDate
                       ? "btn-secondary disabled"
                       : "btn-primary"
                   }`}
                   onClick={handlePayment}
-                  disabled={selectedItems.length === 0}
+                  disabled={
+                    selectedItems.length === 0 || !rentalDate || !returnDate
+                  }
                 >
                   Thanh toán
                 </button>
@@ -275,6 +552,11 @@ const ShoppingCart = ({ userId }) => {
                   </strong>{" "}
                   tổng số lượng
                 </p>
+                {rentalDays > 1 && (
+                  <p>
+                    <strong>{rentalDays}</strong> ngày thuê
+                  </p>
+                )}
               </div>
             </div>
 

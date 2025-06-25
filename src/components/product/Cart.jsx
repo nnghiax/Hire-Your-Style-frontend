@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "../css/Cart.css"; // Import your custom CSS for styling
+import "../css/Cart.css";
 
 const ShoppingCart = ({ userId }) => {
   const [cartData, setCartData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Thêm state cho rental dates
   const [rentalDate, setRentalDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [orderCode, setOrderCode] = useState(null);
 
   const fetchCartData = async () => {
     try {
       setLoading(true);
       setError(null);
-
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực");
 
@@ -32,7 +31,7 @@ const ShoppingCart = ({ userId }) => {
 
       const data = response.data.data || response.data || [];
       setCartData(data);
-      setSelectedItems(data.map((item) => item._id)); // chọn tất cả mặc định
+      setSelectedItems(data.map((item) => item._id));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       setCartData([]);
@@ -57,19 +56,17 @@ const ShoppingCart = ({ userId }) => {
     }
   };
 
-  // Tính số ngày thuê
   const getRentalDays = () => {
     if (!rentalDate || !returnDate) return 1;
     const startDate = new Date(rentalDate);
     const endDate = new Date(returnDate);
     const diffTime = Math.abs(endDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays || 1; // Ít nhất 1 ngày
+    return diffDays || 1;
   };
 
   const rentalDays = getRentalDays();
 
-  // Tính tổng tiền cho từng item (price * quantity * số ngày thuê)
   const getItemTotal = (item) => (item.price || 0) * item.quantity * rentalDays;
 
   const getSubtotal = () => {
@@ -84,9 +81,35 @@ const ShoppingCart = ({ userId }) => {
   const shipping = selectedItems.length > 0 ? 30000 : 0;
   const total = subtotal + shipping;
 
+  const checkPaymentStatus = async (orderCode) => {
+    try {
+      const response = await axios.get(
+        `https://hireyourstyle-backend.onrender.com/payos/check-payment/${orderCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      setPaymentStatus(response.data.status);
+      if (response.data.status === "completed") {
+        setOrderCode(null);
+        fetchCartData();
+        alert("Thanh toán thành công! Đơn thuê của bạn đã được tạo.");
+      } else if (response.data.status === "failed") {
+        alert(
+          response.data.message || "Thanh toán thất bại. Vui lòng thử lại."
+        );
+        setOrderCode(null);
+      }
+    } catch (error) {
+      console.error("Check payment status error:", error);
+    }
+  };
+
   const handlePayment = async () => {
     try {
-      // Validate rental dates
       if (!rentalDate || !returnDate) {
         alert("Vui lòng chọn ngày thuê và ngày trả");
         return;
@@ -97,7 +120,6 @@ const ShoppingCart = ({ userId }) => {
         return;
       }
 
-      // Chuẩn bị dữ liệu rental
       const selectedCartItems = cartData.filter((item) =>
         selectedItems.includes(item._id)
       );
@@ -112,20 +134,20 @@ const ShoppingCart = ({ userId }) => {
         rentalDate: new Date(rentalDate),
         returnDate: new Date(returnDate),
         totalAmount: total,
-        cartItemIds: selectedItems, // Để xóa khỏi cart sau khi thành công
+        cartItemIds: selectedItems,
       };
 
       const order = {
         amount: total,
         description: `HireYourStyle Thuê ${rentalDays} ngày`,
         orderCode: Date.now(),
-        returnUrl: `https://hire-your-style-frontend.vercel.app/cart?success=true&rentalData=${encodeURIComponent(
-          JSON.stringify(rentalData)
-        )}`,
-        cancelUrl:
-          "https://hire-your-style-frontend.vercel.app/cart?success=false",
-        rentalData: rentalData, // Gửi kèm dữ liệu rental
+        returnUrl: `https://hire-your-style-frontend.vercel.app/cart`,
+        cancelUrl: `https://hire-your-style-frontend.vercel.app/cart`,
+        rentalData: rentalData,
       };
+
+      setOrderCode(order.orderCode);
+      setPaymentStatus("pending");
 
       const response = await axios.post(
         "https://hireyourstyle-backend.onrender.com/payos",
@@ -147,65 +169,22 @@ const ShoppingCart = ({ userId }) => {
     } catch (error) {
       console.error("Payment error:", error);
       alert("Lỗi khi xử lý thanh toán. Vui lòng thử lại sau.");
-    }
-  };
-
-  // Kiểm tra payment success từ URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get("success");
-    const rentalDataParam = urlParams.get("rentalData");
-
-    if (success === "true" && rentalDataParam) {
-      try {
-        const rentalData = JSON.parse(decodeURIComponent(rentalDataParam));
-        handlePaymentSuccess(rentalData);
-      } catch (error) {
-        console.error("Error parsing rental data:", error);
-      }
-    }
-  }, []);
-
-  const handlePaymentSuccess = async (rentalData) => {
-    try {
-      // Tạo rental record
-      await axios.post(
-        "https://hireyourstyle-backend.onrender.com/rental/create",
-        rentalData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      // Xóa items đã thanh toán khỏi cart
-      for (const itemId of rentalData.cartItemIds) {
-        await axios.delete(
-          `https://hireyourstyle-backend.onrender.com/delete/${itemId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-      }
-
-      alert("Thanh toán thành công! Đơn thuê của bạn đã được tạo.");
-      fetchCartData(); // Refresh cart
-
-      // Clear URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (error) {
-      console.error("Error creating rental:", error);
-      alert("Có lỗi xảy ra khi tạo đơn thuê. Vui lòng liên hệ hỗ trợ.");
+      setOrderCode(null);
+      setPaymentStatus(null);
     }
   };
 
   useEffect(() => {
     fetchCartData();
   }, [userId]);
+
+  useEffect(() => {
+    let interval;
+    if (orderCode && paymentStatus === "pending") {
+      interval = setInterval(() => checkPaymentStatus(orderCode), 5000);
+    }
+    return () => clearInterval(interval);
+  }, [orderCode, paymentStatus]);
 
   const updateQuantity = async (itemId, change) => {
     const item = cartData.find((item) => item._id === itemId);
@@ -231,7 +210,6 @@ const ShoppingCart = ({ userId }) => {
       );
     } catch (error) {
       console.error("Error updating quantity:", error);
-      // Revert lại state nếu API call thất bại
       setCartData((prev) =>
         prev.map((item) =>
           item._id === itemId ? { ...item, quantity: item.quantity } : item
@@ -240,7 +218,6 @@ const ShoppingCart = ({ userId }) => {
     }
   };
 
-  // Thêm function để xử lý thay đổi quantity từ input
   const handleQuantityInputChange = async (itemId, newQuantity) => {
     const quantity = Math.max(1, parseInt(newQuantity) || 1);
 
@@ -274,7 +251,6 @@ const ShoppingCart = ({ userId }) => {
       `https://hireyourstyle-backend.onrender.com/cart/delete/${itemId}`,
       {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       }
@@ -291,13 +267,18 @@ const ShoppingCart = ({ userId }) => {
     return <div className="text-center">Đang tải giỏ hàng...</div>;
   }
 
+  if (paymentStatus === "pending") {
+    return <div className="text-center">Đang xử lý thanh toán...</div>;
+  }
+
   return (
     <div className="container-fluid bg-light py-5">
       <div className="container">
         <h1 className="text-center mb-4">Giỏ Hàng</h1>
 
+        {error && <div className="alert alert-danger">{error}</div>}
+
         <div className="row">
-          {/* DANH SÁCH SẢN PHẨM */}
           <div className="col-lg-8 mb-4">
             <div className="card">
               <div className="card-header d-flex justify-content-between align-items-center">
@@ -351,7 +332,6 @@ const ShoppingCart = ({ userId }) => {
                           )}
                         </div>
 
-                        {/* Quantity Controls */}
                         <div
                           className="me-3 d-flex align-items-center"
                           style={{ minWidth: "120px" }}
@@ -390,7 +370,6 @@ const ShoppingCart = ({ userId }) => {
                           </button>
                         </div>
 
-                        {/* Item Total */}
                         <div
                           className="me-3 text-end"
                           style={{ minWidth: "100px" }}
@@ -423,7 +402,6 @@ const ShoppingCart = ({ userId }) => {
             </div>
           </div>
 
-          {/* TỔNG ĐƠN HÀNG + THỐNG KÊ */}
           <div className="col-lg-4">
             <div className="card mb-4">
               <div className="card-header">Tổng đơn hàng</div>
@@ -557,7 +535,6 @@ const ShoppingCart = ({ userId }) => {
               </div>
             </div>
 
-            {/* THỐNG KÊ */}
             <div className="card mb-4">
               <div className="card-header">Thống kê giỏ hàng</div>
               <div className="card-body text-center">
@@ -578,7 +555,6 @@ const ShoppingCart = ({ userId }) => {
               </div>
             </div>
 
-            {/* HÀNH ĐỘNG */}
             <div className="card">
               <div className="card-body text-center">
                 <button className="btn btn-outline-primary btn-sm me-2">

@@ -41,7 +41,7 @@ export default function Header() {
             },
           }
         );
-        console.log("User data:", res.data);
+
         const userData = {
           ...res.data.data,
           avatar:
@@ -71,7 +71,7 @@ export default function Header() {
             },
           }
         );
-        console.log("Categories data:", res.data);
+
         setCategories(res.data.data || []);
       } catch (error) {
         console.error("Lỗi khi tải danh mục:", error);
@@ -89,7 +89,7 @@ export default function Header() {
             },
           }
         );
-        console.log("Products data:", res.data);
+
         setProducts(res.data.data || []);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
@@ -361,8 +361,9 @@ export default function Header() {
                   <Nav.Link
                     key={0}
                     href="#"
-                    className={`text-dark ${selectedCategory === "" ? "fw-bold" : ""
-                      }`}
+                    className={`text-dark ${
+                      selectedCategory === "" ? "fw-bold" : ""
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       handleCategorySelect("");
@@ -374,8 +375,9 @@ export default function Header() {
                     <Nav.Link
                       key={index + 1}
                       href="#"
-                      className={`text-dark ${selectedCategory === category._id ? "fw-bold" : ""
-                        }`}
+                      className={`text-dark ${
+                        selectedCategory === category._id ? "fw-bold" : ""
+                      }`}
                       onClick={(e) => {
                         e.preventDefault();
                         handleCategorySelect(category._id);
@@ -442,11 +444,13 @@ export default function Header() {
                         variant="link"
                         id="avatar-dropdown"
                         className="p-0 d-flex align-items-center"
-                        style={{ lineHeight: 0, textDecoration: 'none' }}
+                        style={{ lineHeight: 0, textDecoration: "none" }}
                       >
                         {user && (
                           <>
-                            <Navbar.Text style = {{ marginRight:'20px'}}>Chào, {user.name}</Navbar.Text>
+                            <Navbar.Text style={{ marginRight: "20px" }}>
+                              Chào, {user.name}
+                            </Navbar.Text>
                             <Image
                               src={user.avatar || "/images/default-avatar.png"}
                               roundedCircle
@@ -464,7 +468,9 @@ export default function Header() {
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
                         <Dropdown.Item href="/profile">Hồ sơ</Dropdown.Item>
-                        <Dropdown.Item href="/request">Đăng kí kinh doanh</Dropdown.Item>
+                        <Dropdown.Item href="/request">
+                          Đăng kí kinh doanh
+                        </Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout}>
                           Đăng xuất
                         </Dropdown.Item>

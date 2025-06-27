@@ -521,7 +521,7 @@ const ShoppingCart = ({ userId }) => {
                 </p>
                 <p className="d-flex justify-content-between text-muted">
                   <span>Tiền cọc (50%):</span>
-                  <span>{formatPrice(Math.round(total * 0.3))}</span>
+                  <span>{formatPrice(Math.round(total * 0.5))}</span>
                 </p>
                 <button
                   className={`btn btn-block ${

@@ -11,7 +11,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
-  const { productId } = useParams();
+  const { productId, storeId } = useParams();
   const navigate = useNavigate();
   const [showCalculator, setShowCalculator] = useState(false);
   const [height, setHeight] = useState("");
@@ -53,7 +53,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(
-          `https://hireyourstyle-backend.onrender.com/product/detail/${productId}`,
+          `http://localhost:9999/product/detail/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -106,9 +106,10 @@ const ProductDetail = () => {
 
     try {
       const response = await axios.post(
-        "https://hireyourstyle-backend.onrender.com/cart/add-to-cart",
+        "http://localhost:9999/cart/add-to-cart",
         {
           productId: productId,
+          storeId: storeId,
           size: selectedSize,
           quantity: quantity,
         },

@@ -53,7 +53,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:9999/product/detail/${productId}`,
+          `https://hireyourstyle-backend.onrender.com/product/detail/${productId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -106,7 +106,7 @@ const ProductDetail = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:9999/cart/add-to-cart",
+        "https://hireyourstyle-backend.onrender.com/cart/add-to-cart",
         {
           productId: productId,
           storeId: storeId,

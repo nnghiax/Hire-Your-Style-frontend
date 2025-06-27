@@ -221,11 +221,14 @@ const ListProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:9999/product/list", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const res = await axios.get(
+          "https://hireyourstyle-backend.onrender.com/product/list",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         setProducts(res.data.data);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
@@ -240,11 +243,14 @@ const ListProducts = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("http://localhost:9999/cate/list", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const res = await axios.get(
+          "https://hireyourstyle-backend.onrender.com/cate/list",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         setCategories(res.data.data);
         console.log("Danh mục:", res.data.data);
       } catch (error) {

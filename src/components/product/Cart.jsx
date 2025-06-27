@@ -12,6 +12,16 @@ const ShoppingCart = ({ userId }) => {
   const [rentalDate, setRentalDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
 
+  // Tính số ngày thuê
+  const getRentalDays = () => {
+    if (!rentalDate || !returnDate) return 0;
+    const start = new Date(rentalDate);
+    const end = new Date(returnDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   const fetchCartData = async () => {
     try {
       setLoading(true);
@@ -57,7 +67,12 @@ const ShoppingCart = ({ userId }) => {
     }
   };
 
-  const getItemTotal = (item) => item.quantity * (item.price || 0);
+  const getItemTotal = (item) => {
+    const rentalDays = getRentalDays();
+    const dailyPrice = item.price || 0;
+    const totalDays = rentalDays > 0 ? rentalDays : 1; // Ít nhất 1 ngày
+    return item.quantity * dailyPrice * totalDays;
+  };
 
   const getSubtotal = () => {
     return cartData.reduce((total, item) => {
@@ -217,6 +232,33 @@ const ShoppingCart = ({ userId }) => {
     );
   };
 
+  // Hàm xử lý nhập số lượng trực tiếp
+  const handleQuantityInputChange = async (itemId, value) => {
+    const quantity = parseInt(value) || 1;
+    const finalQuantity = Math.max(1, quantity);
+
+    setCartData((prev) =>
+      prev.map((item) =>
+        item._id === itemId ? { ...item, quantity: finalQuantity } : item
+      )
+    );
+
+    try {
+      await axios.put(
+        `https://hireyourstyle-backend.onrender.com/cart/update-quantity/${itemId}`,
+        { quantity: finalQuantity },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
   const removeItem = async (itemId) => {
     setCartData((prev) => prev.filter((item) => item._id !== itemId));
     setSelectedItems((prev) => prev.filter((id) => id !== itemId));
@@ -242,6 +284,8 @@ const ShoppingCart = ({ userId }) => {
     return <div className="text-center">Đang tải giỏ hàng...</div>;
   }
 
+  const rentalDays = getRentalDays();
+
   return (
     <div className="container-fluid bg-light py-5">
       <div className="container">
@@ -252,7 +296,14 @@ const ShoppingCart = ({ userId }) => {
           <div className="col-lg-8 mb-4">
             <div className="card">
               <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Sản phẩm ({cartData.length})</h5>
+                <h5 className="mb-0">
+                  Sản phẩm ({cartData.length})
+                  {rentalDays > 0 && (
+                    <span className="text-muted ms-2">
+                      - {rentalDays} ngày thuê
+                    </span>
+                  )}
+                </h5>
                 <button
                   className="btn btn-sm btn-outline-secondary"
                   onClick={handleSelectAll}
@@ -291,7 +342,15 @@ const ShoppingCart = ({ userId }) => {
                         <div className="flex-grow-1">
                           <h6>{item.name}</h6>
                           <p className="mb-1 text-muted">Size: {item.size}</p>
-                          <strong>{formatPrice(item.price)}</strong>
+                          <div>
+                            <strong>{formatPrice(item.price)}/ngày</strong>
+                            {rentalDays > 0 && (
+                              <div className="text-muted small">
+                                {rentalDays} ngày × {formatPrice(item.price)} ={" "}
+                                {formatPrice(item.price * rentalDays)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="me-3 d-flex align-items-center">
                           <button
@@ -301,13 +360,33 @@ const ShoppingCart = ({ userId }) => {
                           >
                             -
                           </button>
-                          <span className="mx-2">{item.quantity}</span>
+                          <input
+                            type="number"
+                            className="form-control mx-2 text-center"
+                            style={{ width: "60px" }}
+                            value={item.quantity}
+                            min="1"
+                            onChange={(e) =>
+                              handleQuantityInputChange(
+                                item._id,
+                                e.target.value
+                              )
+                            }
+                            onBlur={(e) => {
+                              if (!e.target.value || e.target.value < 1) {
+                                handleQuantityInputChange(item._id, "1");
+                              }
+                            }}
+                          />
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => updateQuantity(item._id, 1)}
                           >
                             +
                           </button>
+                        </div>
+                        <div className="me-3 text-end">
+                          <strong>{formatPrice(getItemTotal(item))}</strong>
                         </div>
                         <button
                           className="btn btn-sm btn-outline-danger"
@@ -330,20 +409,13 @@ const ShoppingCart = ({ userId }) => {
             <div className="card mb-4">
               <div className="card-header">Tổng đơn hàng</div>
               <div className="card-body">
-                <p className="d-flex justify-content-between">
-                  <span>Tạm tính:</span>
-                  <strong>{formatPrice(subtotal)}</strong>
-                </p>
-                <p className="d-flex justify-content-between">
-                  <span>Phí vận chuyển:</span>
-                  <strong>{formatPrice(shipping)}</strong>
-                </p>
                 <div
                   style={{
                     display: "flex",
                     flexWrap: "wrap",
                     marginRight: "-0.75rem",
                     marginLeft: "-0.75rem",
+                    marginBottom: "1rem",
                   }}
                 >
                   <div
@@ -427,6 +499,21 @@ const ShoppingCart = ({ userId }) => {
                     />
                   </div>
                 </div>
+
+                {rentalDays > 0 && (
+                  <div className="alert alert-info small mb-3">
+                    <strong>Thời gian thuê:</strong> {rentalDays} ngày
+                  </div>
+                )}
+
+                <p className="d-flex justify-content-between">
+                  <span>Tạm tính:</span>
+                  <strong>{formatPrice(subtotal)}</strong>
+                </p>
+                <p className="d-flex justify-content-between">
+                  <span>Phí vận chuyển:</span>
+                  <strong>{formatPrice(shipping)}</strong>
+                </p>
                 <hr />
                 <p className="d-flex justify-content-between">
                   <span>Tổng cộng:</span>
@@ -465,6 +552,11 @@ const ShoppingCart = ({ userId }) => {
                   </strong>{" "}
                   tổng số lượng
                 </p>
+                {rentalDays > 0 && (
+                  <p>
+                    <strong>{rentalDays}</strong> ngày thuê
+                  </p>
+                )}
               </div>
             </div>
 

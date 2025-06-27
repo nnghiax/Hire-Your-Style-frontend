@@ -83,7 +83,7 @@ const ShoppingCart = ({ userId }) => {
   };
 
   const subtotal = getSubtotal();
-  const shipping = selectedItems.length > 0 ? 30000 : 0;
+  const shipping = 0;
   const total = subtotal + shipping;
 
   const handlePayment = async () => {
@@ -114,7 +114,7 @@ const ShoppingCart = ({ userId }) => {
         rentalDate: new Date(rentalDate),
         returnDate: new Date(returnDate),
         totalAmount: total,
-        depositAmount: Math.round(total * 0.3), // 30% deposit
+        depositAmount: Math.round(total * 0.5), // 30% deposit
         cartItemIds: selectedItems, // Để xóa khỏi cart sau khi thành công
       };
 
@@ -520,7 +520,7 @@ const ShoppingCart = ({ userId }) => {
                   <strong className="text-success">{formatPrice(total)}</strong>
                 </p>
                 <p className="d-flex justify-content-between text-muted">
-                  <span>Tiền cọc (30%):</span>
+                  <span>Tiền cọc (50%):</span>
                   <span>{formatPrice(Math.round(total * 0.3))}</span>
                 </p>
                 <button

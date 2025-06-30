@@ -31,7 +31,7 @@ function App() {
         <Route path="/homepage" element={<HomePage />} />
         <Route path="/filter-product" element={<FilterProduct />} />
         <Route
-          path="/product-detail/:productId/:StoreId"
+          path="/product-detail/:productId/:storeId"
           element={<ProductDetailPage />}
         />
         <Route path="/cart" element={<CartPage />} />

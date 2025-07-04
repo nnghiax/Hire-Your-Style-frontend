@@ -31,9 +31,12 @@ function AdminUsers() {
           return;
         }
 
-        const response = await axios.get("https://hireyourstyle-backend.onrender.com/admin/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(
+          "https://hireyourstyle-backend.onrender.com/admin/users",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const {
           totalUsers,
           customerCount,
@@ -58,7 +61,7 @@ function AdminUsers() {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "https://hireyourstyle-backend.onrender.com/admin/users/availability",
+        "https://hireyourstyle-backend.onrender.com/users/availability",
         { userId, isAvailable: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

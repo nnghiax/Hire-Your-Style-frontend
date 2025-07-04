@@ -145,17 +145,15 @@ const ShoppingCart = ({ userId }) => {
         rentalDate: new Date(rentalDate),
         returnDate: new Date(returnDate),
         totalAmount: total,
-        depositAmount: Math.round(total * 0.5), // 30% deposit
+        depositAmount: Math.round(total * 0.5),
         cartItemIds: selectedItems, // Để xóa khỏi cart sau khi thành công
       };
 
       const order = {
         amount: total,
-        description: "Hire Your Style - Rental Payment",
+        description: "Hire Your Style-Rental Payment",
         orderCode: Date.now(),
-        returnUrl: `http://localhost:5173/cart?success=true&rentalData=${encodeURIComponent(
-          JSON.stringify(rentalData)
-        )}`,
+        returnUrl: `http://localhost:5173/cart?success=true`,
         cancelUrl: "http://localhost:5173/cart?success=false",
         rentalData: rentalData, // Gửi kèm dữ liệu rental
       };
@@ -180,59 +178,6 @@ const ShoppingCart = ({ userId }) => {
     } catch (error) {
       console.error("Payment error:", error);
       alert("Lỗi khi xử lý thanh toán. Vui lòng thử lại sau.");
-    }
-  };
-
-  // Kiểm tra payment success từ URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get("success");
-    const rentalDataParam = urlParams.get("rentalData");
-
-    if (success === "true" && rentalDataParam) {
-      try {
-        const rentalData = JSON.parse(decodeURIComponent(rentalDataParam));
-        handlePaymentSuccess(rentalData);
-      } catch (error) {
-        console.error("Error parsing rental data:", error);
-      }
-    }
-  }, []);
-
-  const handlePaymentSuccess = async (rentalData) => {
-    try {
-      // Tạo rental record
-      await axios.post(
-        "https://hireyourstyle-backend.onrender.com/rental/create",
-        rentalData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      // Xóa items đã thanh toán khỏi cart
-      for (const itemId of rentalData.cartItemIds) {
-        await axios.delete(
-          `https://hireyourstyle-backend.onrender.com/cart/delete/${itemId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-      }
-
-      alert("Thanh toán thành công! Đơn thuê của bạn đã được tạo.");
-      fetchCartData(); // Refresh cart
-
-      // Clear URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (error) {
-      console.error("Error creating rental:", error);
-      alert("Có lỗi xảy ra khi tạo đơn thuê. Vui lòng liên hệ hỗ trợ.");
     }
   };
 

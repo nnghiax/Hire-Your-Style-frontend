@@ -90,6 +90,9 @@ const AdminSidebar = () => {
         <StyledNavLink to="/admin/users" icon={FaUsers}>
           Quản lý người dùng
         </StyledNavLink>
+        <StyledNavLink to="/admin/rental-dashboard" icon={FaUsers}>
+          Quản lý đơn thuê
+        </StyledNavLink>
       </div>
     </div>
   );

@@ -32,6 +32,7 @@ function ProductFilter({ headerProducts }) {
   const itemsPerPage = 12;
   const navigate = useNavigate();
 
+  // Initial loading of products
   // Updated price options for VND
   const priceOptions = [
     { id: "all", label: "Tất cả giá", count: 1000, checked: true },
@@ -248,14 +249,11 @@ function ProductFilter({ headerProducts }) {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(
-        "https://hire-your-style-frontend.vercel.app/product/list",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const res = await axios.get("http://localhost:9999/product/list", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setProducts(res.data.data);
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm:", error);
@@ -389,14 +387,14 @@ function ProductFilter({ headerProducts }) {
                     <Button
                       variant="link"
                       className="text-dark p-0 btn-sm"
-                      onClick={() => navigate(`/product-detail/${product._id}`)}
+                      onClick={() =>
+                        navigate(
+                          `/product-detail/${product._id}/${product.storeId}`
+                        )
+                      }
                     >
                       <FaEye style={{ color: "#8A784E" }} />
-                      View Detail
-                    </Button>
-                    <Button variant="link" className="text-dark p-0 btn-sm">
-                      <FaShoppingCart style={{ color: "#8A784E" }} />
-                      Add To Cart
+                      Xem chi tiết
                     </Button>
                   </Card.Footer>
                 </Card>

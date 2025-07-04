@@ -16,11 +16,14 @@ const RentalDashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực");
 
-      const response = await axios.get("http://localhost:9999/rental/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        "https://hireyourstyle-backend.onrender.com/rental/list",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setRentals(response.data.data || []);
     } catch (err) {

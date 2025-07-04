@@ -137,7 +137,7 @@ function AdminUsers() {
               <Card className="shadow-sm border-0">
                 <Card.Body>
                   <Card.Title>Số chủ cửa hàng</Card.Title>
-                  <h3>{storeOwnerCount}</h3>
+                  <h3>{1}</h3>
                 </Card.Body>
               </Card>
             </Col>

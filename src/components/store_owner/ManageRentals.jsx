@@ -28,7 +28,7 @@ const ManageRentals = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:9999/store/by-user/${userId}`,
+        `https://hireyourstyle-backend.onrender.com/store/by-user/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -50,11 +50,14 @@ const ManageRentals = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực");
 
-      const response = await axios.get("http://localhost:9999/rental/list", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        "https://hireyourstyle-backend.onrender.com/rental/list",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       // Lọc các đơn thuê có items[0].storeId._id trùng với storeId
       const filteredRentals = (response.data.data || []).filter(
@@ -77,7 +80,7 @@ const ManageRentals = () => {
       const token = localStorage.getItem("token");
 
       const response = await axios.put(
-        `http://localhost:9999/rental/update-status/${rentalId}`,
+        `https://hireyourstyle-backend.onrender.com/rental/update-status/${rentalId}`,
         { status: newStatus },
         {
           headers: {

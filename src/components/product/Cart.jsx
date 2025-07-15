@@ -226,8 +226,8 @@ const ShoppingCart = ({ userId }) => {
         amount: Math.round(total),
         description: `HireYourStyle Thuê ${rentalDays} ngày`,
         orderCode: Date.now(),
-        returnUrl: `http://localhost:5173/payment/success?${tempRental.toString()}`,
-        cancelUrl: "http://localhost:5173/payment/cancel",
+        returnUrl: `https://hire-your-style-frontend.vercel.app/payment/success?${tempRental.toString()}`,
+        cancelUrl: "https://hire-your-style-frontend.vercel.app/payment/cancel",
         selectedItems: selectedItems, // Gửi toàn bộ thông tin items đã chọn
         rentalDate,
         returnDate,

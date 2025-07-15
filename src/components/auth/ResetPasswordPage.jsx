@@ -55,7 +55,7 @@ function ResetPasswordPage() {
 
     try {
       const res = await axios.post(
-        "https://hireyourstyle-backend.onrender.com/auth/reset-password",
+        "https://hireyourstyle-backend.onrender.com/reset-password",
         formData
       );
       setMessage(res.data.message);

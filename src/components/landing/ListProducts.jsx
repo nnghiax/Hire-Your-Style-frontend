@@ -28,7 +28,7 @@ const Featured = () => {
     },
     {
       icon: "fa-exchange-alt",
-      title: "Đổi trả trong 14 ngày",
+      title: "Thao tác nhanh chóng",
     },
     {
       icon: "fa-phone-volume",
@@ -132,7 +132,6 @@ function TopbarNavbar() {
                       top: "50%",
                       left: "50%",
                       transform: "translate(-50%, -50%)",
-                      // backgroundColor: "rgba(255,255,255,0.8)",
                       padding: "20px",
                       borderRadius: "5px",
                       textAlign: "center",
@@ -147,7 +146,6 @@ function TopbarNavbar() {
                       từ vest lịch lãm, áo dài truyền thống đến váy dạ hội lộng
                       lẫy và trang phục biểu diễn nổi bật.
                     </p>
-                    {/* <Button variant="primary">Mua ngay</Button> */}
                   </div>
                 </div>
               </div>
@@ -170,7 +168,6 @@ function TopbarNavbar() {
                       top: "50%",
                       left: "50%",
                       transform: "translate(-50%, -50%)",
-                      // backgroundColor: "rgba(255,255,255,0.8)",
                       padding: "20px",
                       borderRadius: "5px",
                       textAlign: "center",
@@ -179,11 +176,9 @@ function TopbarNavbar() {
                   >
                     <h3>Biến hóa phong cách – Tỏa sáng mọi sự kiện</h3>
                     <p>
-                      {" "}
                       Thuê trang phục dễ dàng, nhanh chóng với hàng trăm mẫu đa
                       dạng cho kỷ yếu, lễ hội, biểu diễn và tiệc tùng.
                     </p>
-                    {/* <Button variant="primary">Mua ngay</Button> */}
                   </div>
                 </div>
               </div>
@@ -361,12 +356,23 @@ const ListProducts = () => {
             .map((product) => (
               <div key={product.id} className="px-3">
                 <Card className="border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                  <div className="position-relative">
+                  <div
+                    className="position-relative"
+                    style={{
+                      aspectRatio: "3/4",
+                      overflow: "hidden",
+                    }}
+                  >
                     <Card.Img
                       variant="top"
                       src={product.image}
                       alt={product.name}
-                      className="img-fluid"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
                     />
                   </div>
                   <Card.Body className="px-3 pt-3 pb-4 d-flex flex-column justify-content-between">
@@ -390,18 +396,6 @@ const ListProducts = () => {
                         {product.name}
                       </Button>
                     </Card.Title>
-
-                    {/* <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-bold ">{product.price}</span>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="rounded-pill px-3 py-1"
-                      >
-                        Thêm vào giỏ
-                      </Button>
-                    </div> */}
-
                     <Button
                       variant="link"
                       size="sm"
@@ -440,12 +434,23 @@ const ListProducts = () => {
             .map((product) => (
               <div key={product.id} className="px-3">
                 <Card className="border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                  <div className="position-relative">
+                  <div
+                    className="position-relative"
+                    style={{
+                      aspectRatio: "3/4",
+                      overflow: "hidden",
+                    }}
+                  >
                     <Card.Img
                       variant="top"
                       src={product.image}
                       alt={product.name}
-                      className="img-fluid"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
                     />
                   </div>
                   <Card.Body className="px-3 pt-3 pb-4 d-flex flex-column justify-content-between">
@@ -469,18 +474,162 @@ const ListProducts = () => {
                         {product.name}
                       </Button>
                     </Card.Title>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className=" text-decoration-none p-0 mt-1 text-start"
+                      onClick={() =>
+                        navigate(
+                          `/product-detail/${product._id}/${product.storeId}`
+                        )
+                      }
+                      style={{ color: "#8A784E" }}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </div>
+            ))}
+        </Slider>
 
-                    {/* <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="fw-bold ">{product.price}</span>
+        <div className="d-flex flex-wrap justify-content-between align-items-center mt-5 mb-3">
+          <h4 className="text-uppercase" style={{ color: "#8A784E" }}>
+            Trang Phục Truyền Thống Dân Tộc
+          </h4>
+          <Button
+            variant="link"
+            className="text-decoration-none p-0"
+            style={{ color: "#8A784E" }}
+            onClick={() => handleViewAll("682835f03bae4dfdf16522c5")} // ID danh mục Áo Dài
+          >
+            Xem tất cả sản phẩm
+          </Button>
+        </div>
+        <Slider {...settings} className="product-carousel">
+          {products
+            .filter((p) => p.categoryId === "682835f03bae4dfdf16522c5")
+            .map((product) => (
+              <div key={product.id} className="px-3">
+                <Card className="border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                  <div
+                    className="position-relative"
+                    style={{
+                      aspectRatio: "3/4",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Card.Img
+                      variant="top"
+                      src={product.image}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
+                    />
+                  </div>
+                  <Card.Body className="px-3 pt-3 pb-4 d-flex flex-column justify-content-between">
+                    <Card.Title
+                      className="text-uppercase fs-6 mb-2 fw-semibold text-truncate"
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="rounded-pill px-3 py-1"
+                        variant="link"
+                        className="text-dark text-decoration-none p-0"
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
                       >
-                        Thêm vào giỏ
+                        {product.name}
                       </Button>
-                    </div> */}
+                    </Card.Title>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className=" text-decoration-none p-0 mt-1 text-start"
+                      onClick={() =>
+                        navigate(
+                          `/product-detail/${product._id}/${product.storeId}`
+                        )
+                      }
+                      style={{ color: "#8A784E" }}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </div>
+            ))}
+        </Slider>
 
+        <div className="d-flex flex-wrap justify-content-between align-items-center mt-5 mb-3">
+          <h4 className="text-uppercase" style={{ color: "#8A784E" }}>
+            Váy Cưới
+          </h4>
+          <Button
+            variant="link"
+            className="text-decoration-none p-0"
+            style={{ color: "#8A784E" }}
+            onClick={() => handleViewAll("682835e33bae4dfdf16522c1")} // ID danh mục Áo Dài
+          >
+            Xem tất cả sản phẩm
+          </Button>
+        </div>
+        <Slider {...settings} className="product-carousel">
+          {products
+            .filter((p) => p.categoryId === "682835e33bae4dfdf16522c1")
+            .map((product) => (
+              <div key={product.id} className="px-3">
+                <Card className="border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                  <div
+                    className="position-relative"
+                    style={{
+                      aspectRatio: "3/4",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Card.Img
+                      variant="top"
+                      src={product.image}
+                      alt={product.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
+                    />
+                  </div>
+                  <Card.Body className="px-3 pt-3 pb-4 d-flex flex-column justify-content-between">
+                    <Card.Title
+                      className="text-uppercase fs-6 mb-2 fw-semibold text-truncate"
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      <Button
+                        variant="link"
+                        className="text-dark text-decoration-none p-0"
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {product.name}
+                      </Button>
+                    </Card.Title>
                     <Button
                       variant="link"
                       size="sm"

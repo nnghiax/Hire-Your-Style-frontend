@@ -32,7 +32,6 @@ function ProductFilter({ headerProducts }) {
   const itemsPerPage = 12;
   const navigate = useNavigate();
 
-  // Initial loading of products
   // Updated price options for VND
   const priceOptions = [
     { id: "all", label: "Tất cả giá", count: 1000, checked: true },
@@ -41,6 +40,7 @@ function ProductFilter({ headerProducts }) {
     { id: "500000-700000", label: "500,000₫ - 700,000₫", count: 246 },
     { id: "700000-900000", label: "700,000₫ - 900,000₫", count: 145 },
     { id: "900000-1000000", label: "900,000₫ - 1,000,000₫", count: 168 },
+    { id: "1000000+", label: "Trên 1,000,000₫", count: 100 },
   ];
 
   const colorOptions = [
@@ -78,6 +78,9 @@ function ProductFilter({ headerProducts }) {
 
     const price = product.price || 0;
     return priceRanges.some((range) => {
+      if (range === "1000000+") {
+        return price > 1000000;
+      }
       const [min, max] = range.split("-").map(Number);
       return price >= min && price <= max;
     });

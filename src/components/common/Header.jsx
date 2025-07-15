@@ -27,21 +27,27 @@ export default function Header() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await axios.get(
           "https://hireyourstyle-backend.onrender.com/user/profile",
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
-
         const userData = {
           ...res.data.data,
           avatar:
@@ -53,11 +59,13 @@ export default function Header() {
       } catch (error) {
         console.error("Lỗi khi tải thông tin người dùng:", error);
         if (error.response?.status === 401) {
-          localStorage.removeItem("token");
+          localStorage.removeItem("token"); // Xóa token nếu hết hạn
           setIsLoggedIn(false);
           setUser(null);
           navigate("/login");
         }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -67,11 +75,10 @@ export default function Header() {
           "https://hireyourstyle-backend.onrender.com/cate/list",
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
           }
         );
-
         setCategories(res.data.data || []);
       } catch (error) {
         console.error("Lỗi khi tải danh mục:", error);
@@ -85,11 +92,10 @@ export default function Header() {
           "https://hireyourstyle-backend.onrender.com/product/list",
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
           }
         );
-
         setProducts(res.data.data || []);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
@@ -97,11 +103,9 @@ export default function Header() {
       }
     };
 
-    if (localStorage.getItem("token")) {
-      fetchUser();
-    }
-    fetchCategories();
-    fetchProducts();
+    Promise.all([fetchUser(), fetchCategories(), fetchProducts()]).catch(
+      (error) => console.error("Lỗi khi tải dữ liệu:", error)
+    );
   }, []);
 
   const handleLogout = () => {
@@ -184,7 +188,6 @@ export default function Header() {
       return matchesSearch && matchesCategory;
     });
 
-    // Luôn navigate, không cần kiểm tra điều kiện
     navigate(
       `/filter-product?search=${encodeURIComponent(
         currentActiveSearchValue || ""
@@ -201,19 +204,28 @@ export default function Header() {
         <Row className="py-2 px-xl-5" style={{ backgroundColor: "#e9e9e9" }}>
           <Col lg={6} className="d-none d-lg-block">
             <div className="d-inline-flex align-items-center">
-              <a href="#" style={{ textDecoration: "none", color: "#000000" }}>
+              <a
+                href="/contact"
+                style={{ textDecoration: "none", color: "#000000" }}
+              >
                 Câu hỏi thường gặp
               </a>
               <span className="px-2" style={{ color: "#B6B09F" }}>
                 |
               </span>
-              <a href="#" style={{ textDecoration: "none", color: "#000000" }}>
+              <a
+                href="/contact"
+                style={{ textDecoration: "none", color: "#000000" }}
+              >
                 Trợ giúp
               </a>
               <span className="px-2" style={{ color: "#B6B09F" }}>
                 |
               </span>
-              <a href="#" style={{ textDecoration: "none", color: "#000000" }}>
+              <a
+                href="/contact"
+                style={{ textDecoration: "none", color: "#000000" }}
+              >
                 Hỗ trợ
               </a>
             </div>
@@ -273,12 +285,26 @@ export default function Header() {
                 boxShadow: "none",
               }}
             >
-              <h1
-                className="m-0 display-5 font-weight-semi-bold"
-                style={{ color: "#B6B09F", textDecoration: "none" }}
-              >
-                Hire Your Style
-              </h1>
+              <div className="d-flex align-items-center">
+                <img
+                  src="/img/Hire.png" // Thay bằng đường dẫn ảnh thực tế
+                  alt="Logo"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    objectFit: "cover",
+                    borderRadius: "50%",
+                    marginRight: "10px",
+                    border: "2px solid #B6B09F", // Khung ảnh
+                  }}
+                />
+                <h1
+                  className="m-0 display-6 font-weight-semi-bold"
+                  style={{ color: "#B6B09F", textDecoration: "none" }}
+                >
+                  Hire Your Style
+                </h1>
+              </div>
             </Button>
           </Col>
           <Col lg={6} xs={6} className="text-left">
@@ -414,11 +440,14 @@ export default function Header() {
                   <Nav.Link href="/" className="text-dark">
                     Trang chủ
                   </Nav.Link>
-                  <Nav.Link href="/shop" className="text-dark">
+                  <Nav.Link
+                    href="/filter-product?search=&category="
+                    className="text-dark"
+                  >
                     Cửa hàng
                   </Nav.Link>
-                  <Nav.Link href="/detail" className="text-dark">
-                    Chi tiết sản phẩm
+                  <Nav.Link href="/blog" className="text-dark">
+                    Blog
                   </Nav.Link>
                   <NavDropdown
                     title="Trang"
@@ -426,16 +455,16 @@ export default function Header() {
                     className="text-dark"
                   >
                     <NavDropdown.Item href="/cart">Giỏ hàng</NavDropdown.Item>
-                    <NavDropdown.Item href="/checkout">
-                      Thanh toán
-                    </NavDropdown.Item>
+                    <NavDropdown.Item href="/cart">Thanh toán</NavDropdown.Item>
                   </NavDropdown>
                   <Nav.Link href="/contact" className="text-dark">
                     Liên hệ
                   </Nav.Link>
                 </Nav>
                 <Nav className="ml-auto py-0">
-                  {isLoggedIn ? (
+                  {loading ? (
+                    <Navbar.Text>Đang tải...</Navbar.Text>
+                  ) : isLoggedIn ? (
                     <Dropdown
                       show={showDropdown}
                       onToggle={() => setShowDropdown(!showDropdown)}
@@ -471,6 +500,9 @@ export default function Header() {
                         <Dropdown.Item href="/request">
                           Đăng kí kinh doanh
                         </Dropdown.Item>
+                        <Dropdown.Item href="/rental-history">
+                          Lịch sử Thuê
+                        </Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout}>
                           Đăng xuất
                         </Dropdown.Item>
@@ -478,18 +510,27 @@ export default function Header() {
                     </Dropdown>
                   ) : (
                     <>
-                      <Nav.Link
+                      <Button
+                        variant="dark"
+                        className="mr-2"
                         onClick={() => navigate("/login")}
-                        className="text-dark"
+                        style={{
+                          borderRadius: "20px",
+                          padding: "5px 15px",
+                          marginRight: "10px",
+                          backgroundColor: "#B6B09F",
+                        }}
                       >
                         Đăng nhập
-                      </Nav.Link>
-                      <Nav.Link
+                      </Button>
+                      <Button
+                        variant="light"
+                        className="border"
                         onClick={() => navigate("/register")}
-                        className="text-dark"
+                        style={{ borderRadius: "20px", padding: "5px 15px" }}
                       >
                         Đăng ký
-                      </Nav.Link>
+                      </Button>
                     </>
                   )}
                 </Nav>
@@ -500,7 +541,7 @@ export default function Header() {
         <Row
           style={{
             height: "5vh",
-            position: "relative", // cần nếu dùng position: absolute bên trong
+            position: "relative",
             justifyContent: "center",
             alignItems: "center",
           }}

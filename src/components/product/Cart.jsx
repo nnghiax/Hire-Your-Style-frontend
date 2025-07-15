@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../css/Cart.css"; // Import your custom CSS for styling
+import { useNavigate } from "react-router-dom";
 
 const ShoppingCart = ({ userId }) => {
   const [cartData, setCartData] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]); // Lưu toàn bộ item object
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState([]);
-
+  const [selectedStoreId, setSelectedStoreId] = useState(null); // Store đã chọn
+  const [notification, setNotification] = useState(""); // Thông báo
+  const user = JSON.parse(localStorage.getItem("user")) || userId;
   // Thêm state cho rental dates
   const [rentalDate, setRentalDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const navigate = useNavigate();
 
   // Tính số ngày thuê
   const getRentalDays = () => {
@@ -21,6 +25,22 @@ const ShoppingCart = ({ userId }) => {
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Nhóm sản phẩm theo store
+  const groupedCartData = cartData.reduce((acc, item) => {
+    const storeId = item.storeId;
+    if (!acc[storeId]) {
+      acc[storeId] = [];
+    }
+    acc[storeId].push(item);
+    return acc;
+  }, {});
+
+  // Hiển thị thông báo tạm thời
+  const showNotification = (message) => {
+    setNotification(message);
+    setTimeout(() => setNotification(""), 3000);
   };
 
   const fetchCartData = async () => {
@@ -43,7 +63,8 @@ const ShoppingCart = ({ userId }) => {
 
       const data = response.data.data || response.data || [];
       setCartData(data);
-      setSelectedItems(data.map((item) => item._id)); // chọn tất cả mặc định
+      setSelectedItems([]); // Reset selected items
+      setSelectedStoreId(null); // Reset selected store
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       setCartData([]);
@@ -81,20 +102,81 @@ const ShoppingCart = ({ userId }) => {
   };
 
   console.log("Cart Data:", cartData);
+  console.log("selectedItems:", selectedItems);
+  console.log("selectedStoreId:", selectedStoreId);
 
-  const handleCheckboxChange = (itemId) => {
-    setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+  const handleCheckboxChange = (item) => {
+    // Kiểm tra xem có thể chọn item này không
+    if (selectedStoreId && selectedStoreId !== item.storeId) {
+      const currentStoreName =
+        storeData.find((store) => store._id === selectedStoreId)?.name ||
+        "Không rõ";
+      const itemStoreName =
+        storeData.find((store) => store._id === item.storeId)?.name ||
+        "Không rõ";
+      showNotification(
+        `Bạn chỉ có thể chọn sản phẩm từ cùng một cửa hàng trong một đơn hàng. Hiện tại bạn đang chọn sản phẩm từ "${currentStoreName}". Không thể chọn sản phẩm từ "${itemStoreName}".`
+      );
+      return;
+    }
+
+    setSelectedItems((prev) => {
+      const isSelected = prev.some(
+        (selectedItem) => selectedItem._id === item._id
+      );
+
+      if (isSelected) {
+        // Bỏ chọn item
+        const newSelected = prev.filter(
+          (selectedItem) => selectedItem._id !== item._id
+        );
+        // Nếu không còn item nào được chọn thì reset selectedStoreId
+        if (newSelected.length === 0) {
+          setSelectedStoreId(null);
+        }
+        return newSelected;
+      } else {
+        // Chọn item
+        if (!selectedStoreId) {
+          setSelectedStoreId(item.storeId);
+        }
+        return [...prev, item];
+      }
+    });
   };
 
-  const handleSelectAll = () => {
-    if (selectedItems.length === cartData.length) {
-      setSelectedItems([]);
+  const handleSelectAllStore = (storeId) => {
+    const storeItems = groupedCartData[storeId];
+    const allStoreItemsSelected = storeItems.every((item) =>
+      selectedItems.some((selected) => selected._id === item._id)
+    );
+
+    if (allStoreItemsSelected) {
+      // Bỏ chọn tất cả items của store này
+      setSelectedItems((prev) =>
+        prev.filter((item) => item.storeId !== storeId)
+      );
+      setSelectedStoreId(null);
     } else {
-      setSelectedItems(cartData.map((item) => item._id));
+      // Kiểm tra xem có store khác đã được chọn chưa
+      if (selectedStoreId && selectedStoreId !== storeId) {
+        const currentStoreName =
+          storeData.find((store) => store._id === selectedStoreId)?.name ||
+          "Không rõ";
+        const targetStoreName =
+          storeData.find((store) => store._id === storeId)?.name || "Không rõ";
+        showNotification(
+          `Bạn chỉ có thể chọn sản phẩm từ cùng một cửa hàng. Hiện tại bạn đang chọn sản phẩm từ "${currentStoreName}". Không thể chọn sản phẩm từ "${targetStoreName}".`
+        );
+        return;
+      }
+
+      // Chọn tất cả items của store này
+      setSelectedItems((prev) => {
+        const otherStoreItems = prev.filter((item) => item.storeId !== storeId);
+        return [...otherStoreItems, ...storeItems];
+      });
+      setSelectedStoreId(storeId);
     }
   };
 
@@ -106,78 +188,68 @@ const ShoppingCart = ({ userId }) => {
   };
 
   const getSubtotal = () => {
-    return cartData.reduce((total, item) => {
-      return selectedItems.includes(item._id)
-        ? total + getItemTotal(item)
-        : total;
+    return selectedItems.reduce((total, item) => {
+      return total + getItemTotal(item);
     }, 0);
   };
 
   const subtotal = getSubtotal();
   const shipping = 0;
-  const total = subtotal + shipping;
+  const totalRental = subtotal + shipping;
+  const deposit = Math.round(totalRental * 0.5);
+  const total = totalRental + deposit;
+
+  const tempRental = new URLSearchParams({
+    userId: user._id,
+    items: encodeURIComponent(JSON.stringify(selectedItems)), // ✅ encode an toàn hơn
+    rentalDate,
+    returnDate,
+    totalAmount: total.toString(),
+    depositAmount: Math.round(total * 0.5).toString(),
+    status: "pending",
+  });
+
+  console.log("user:", user._id);
+  console.log("tempRental:", tempRental.toString());
 
   const handlePayment = async () => {
+    if (selectedItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+      return;
+    }
+
     try {
-      // Validate rental dates
-      if (!rentalDate || !returnDate) {
-        alert("Vui lòng chọn ngày thuê và ngày trả");
-        return;
-      }
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực");
 
-      if (new Date(rentalDate) >= new Date(returnDate)) {
-        alert("Ngày trả phải sau ngày thuê");
-        return;
-      }
-
-      // Chuẩn bị dữ liệu rental
-      const selectedCartItems = cartData.filter((item) =>
-        selectedItems.includes(item._id)
-      );
-
-      const rentalData = {
-        items: selectedCartItems.map((item) => ({
-          productId: item.productId || item._id,
-          storeId: item.storeId,
-          size: item.size,
-          quantity: item.quantity,
-        })),
-        rentalDate: new Date(rentalDate),
-        returnDate: new Date(returnDate),
-        totalAmount: total,
-        depositAmount: Math.round(total * 0.5),
-        cartItemIds: selectedItems, // Để xóa khỏi cart sau khi thành công
-      };
-
-      const order = {
-        amount: total,
-        description: "Hire Your Style-Rental Payment",
+      const orderData = {
+        amount: Math.round(total),
+        description: `HireYourStyle Thuê ${rentalDays} ngày`,
         orderCode: Date.now(),
-        returnUrl: `http://localhost:5173/cart?success=true`,
-        cancelUrl: "http://localhost:5173/cart?success=false",
-        rentalData: rentalData, // Gửi kèm dữ liệu rental
+        returnUrl: `http://localhost:5173/payment/success?${tempRental.toString()}`,
+        cancelUrl: "http://localhost:5173/payment/cancel",
+        selectedItems: selectedItems, // Gửi toàn bộ thông tin items đã chọn
+        rentalDate,
+        returnDate,
+        rentalDays,
       };
 
       const response = await axios.post(
         "https://hireyourstyle-backend.onrender.com/payos",
-        order,
+        orderData,
         {
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
-      const checkoutUrl = response.data?.checkoutUrl;
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        throw new Error("Không nhận được URL thanh toán.");
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert("Lỗi khi xử lý thanh toán. Vui lòng thử lại sau.");
+      // Nếu tạo thành công, chuyển hướng đến trang thanh toán
+      window.location.href = response.data.checkoutUrl;
+    } catch (err) {
+      console.error("Lỗi khi tạo link thanh toán:", err);
+      setError(err.response?.data?.error || "Tạo link thanh toán thất bại");
     }
   };
 
@@ -191,7 +263,15 @@ const ShoppingCart = ({ userId }) => {
     if (!item) return;
     const newQuantity = Math.max(1, item.quantity + change);
 
+    // Cập nhật cartData
     setCartData((prev) =>
+      prev.map((item) =>
+        item._id === itemId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+
+    // Cập nhật selectedItems nếu item đó đã được chọn
+    setSelectedItems((prev) =>
       prev.map((item) =>
         item._id === itemId ? { ...item, quantity: newQuantity } : item
       )
@@ -214,7 +294,15 @@ const ShoppingCart = ({ userId }) => {
     const quantity = parseInt(value) || 1;
     const finalQuantity = Math.max(1, quantity);
 
+    // Cập nhật cartData
     setCartData((prev) =>
+      prev.map((item) =>
+        item._id === itemId ? { ...item, quantity: finalQuantity } : item
+      )
+    );
+
+    // Cập nhật selectedItems nếu item đó đã được chọn
+    setSelectedItems((prev) =>
       prev.map((item) =>
         item._id === itemId ? { ...item, quantity: finalQuantity } : item
       )
@@ -238,7 +326,14 @@ const ShoppingCart = ({ userId }) => {
 
   const removeItem = async (itemId) => {
     setCartData((prev) => prev.filter((item) => item._id !== itemId));
-    setSelectedItems((prev) => prev.filter((id) => id !== itemId));
+    setSelectedItems((prev) => {
+      const newSelected = prev.filter((item) => item._id !== itemId);
+      // Nếu không còn item nào được chọn thì reset selectedStoreId
+      if (newSelected.length === 0) {
+        setSelectedStoreId(null);
+      }
+      return newSelected;
+    });
 
     await axios.delete(
       `https://hireyourstyle-backend.onrender.com/cart/delete/${itemId}`,
@@ -263,128 +358,181 @@ const ShoppingCart = ({ userId }) => {
 
   const rentalDays = getRentalDays();
 
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
   return (
     <div className="container-fluid bg-light py-5">
       <div className="container">
         <h1 className="text-center mb-4">Giỏ Hàng</h1>
 
-        <div className="row">
-          {/* DANH SÁCH SẢN PHẨM */}
-          <div className="col-lg-8 mb-4">
-            <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
-                  Sản phẩm ({cartData.length})
-                  {rentalDays > 0 && (
-                    <span className="text-muted ms-2">
-                      - {rentalDays} ngày thuê
-                    </span>
-                  )}
-                </h5>
-                <button
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={handleSelectAll}
-                >
-                  {selectedItems.length === cartData.length
-                    ? "Bỏ chọn tất cả"
-                    : "Chọn tất cả"}
-                </button>
-              </div>
+        {/* Thông báo */}
+        {notification && (
+          <div
+            className="alert alert-warning alert-dismissible fade show"
+            role="alert"
+          >
+            {notification}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setNotification("")}
+            ></button>
+          </div>
+        )}
 
-              {cartData.length > 0 ? (
-                <div className="card-body p-0">
-                  {cartData.map((item, index) => (
-                    <div
-                      key={item._id}
-                      className={`p-3 ${
-                        index < cartData.length - 1 ? "border-bottom" : ""
-                      }`}
-                    >
+        <div className="row">
+          {/* DANH SÁCH SẢN PHẨM THEO STORE */}
+          <div className="col-lg-8 mb-4">
+            {Object.keys(groupedCartData).length > 0 ? (
+              Object.keys(groupedCartData).map((storeId) => {
+                const storeItems = groupedCartData[storeId];
+                const storeName =
+                  storeData.find((store) => store._id === storeId)?.name ||
+                  "Không rõ";
+                const allStoreItemsSelected = storeItems.every((item) =>
+                  selectedItems.some((selected) => selected._id === item._id)
+                );
+                const someStoreItemsSelected = storeItems.some((item) =>
+                  selectedItems.some((selected) => selected._id === item._id)
+                );
+
+                return (
+                  <div key={storeId} className="card mb-3">
+                    <div className="card-header d-flex justify-content-between align-items-center">
                       <div className="d-flex align-items-center">
                         <input
                           type="checkbox"
-                          className="form-check-input me-3"
-                          checked={selectedItems.includes(item._id)}
-                          onChange={() => handleCheckboxChange(item._id)}
+                          className="form-check-input me-2"
+                          checked={allStoreItemsSelected}
+                          ref={(input) => {
+                            if (input)
+                              input.indeterminate =
+                                someStoreItemsSelected &&
+                                !allStoreItemsSelected;
+                          }}
+                          onChange={() => handleSelectAllStore(storeId)}
                         />
-                        <img
-                          src={
-                            item.image ||
-                            `https://picsum.photos/100?random=${index}`
-                          }
-                          alt={item.name}
-                          className="img-thumbnail me-3"
-                          style={{ width: "100px", height: "120px" }}
-                        />
-                        <div className="flex-grow-1">
-                          <h6>{item.name}</h6>
-                          <p className="mb-1 text-muted">
-                            Store:{" "}
-                            {storeData.find(
-                              (store) => store._id === item.storeId
-                            )?.name || "Không rõ"}
-                          </p>
-                          <p className="mb-1 text-muted">Size: {item.size}</p>
-                          <div>
-                            <strong>{formatPrice(item.price)}/ngày</strong>
-                            {rentalDays > 0 && (
-                              <div className="text-muted small">
-                                {rentalDays} ngày × {formatPrice(item.price)} ={" "}
-                                {formatPrice(item.price * rentalDays)}
+                        <h5 className="mb-0">
+                          🏪 {storeName} ({storeItems.length} sản phẩm)
+                          {rentalDays > 0 && (
+                            <span className="text-muted ms-2">
+                              - {rentalDays} ngày thuê
+                            </span>
+                          )}
+                        </h5>
+                      </div>
+                      {selectedStoreId && selectedStoreId !== storeId && (
+                        <small className="text-muted">
+                          Không thể chọn (đã chọn cửa hàng khác)
+                        </small>
+                      )}
+                    </div>
+
+                    <div className="card-body p-0">
+                      {storeItems.map((item, index) => (
+                        <div
+                          key={item._id}
+                          className={`p-3 ${
+                            index < storeItems.length - 1 ? "border-bottom" : ""
+                          } ${
+                            selectedStoreId && selectedStoreId !== storeId
+                              ? "opacity-50"
+                              : ""
+                          }`}
+                        >
+                          <div className="d-flex align-items-center">
+                            <input
+                              type="checkbox"
+                              className="form-check-input me-3"
+                              checked={selectedItems.some(
+                                (selectedItem) => selectedItem._id === item._id
+                              )}
+                              onChange={() => handleCheckboxChange(item)}
+                              disabled={
+                                selectedStoreId && selectedStoreId !== storeId
+                              }
+                            />
+                            <img
+                              src={
+                                item.image ||
+                                `https://picsum.photos/100?random=${index}`
+                              }
+                              alt={item.name}
+                              className="img-thumbnail me-3"
+                              style={{ width: "100px", height: "120px" }}
+                            />
+                            <div className="flex-grow-1">
+                              <h6>{item.name}</h6>
+                              <p className="mb-1 text-muted">
+                                Size: {item.size}
+                              </p>
+                              <div>
+                                <strong>{formatPrice(item.price)}/ngày</strong>
+                                {rentalDays > 0 && (
+                                  <div className="text-muted small">
+                                    {rentalDays} ngày ×{" "}
+                                    {formatPrice(item.price)} ={" "}
+                                    {formatPrice(item.price * rentalDays)}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
+                            <div className="me-3 d-flex align-items-center">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => updateQuantity(item._id, -1)}
+                                disabled={item.quantity <= 1}
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                className="form-control mx-2 text-center"
+                                style={{ width: "60px" }}
+                                value={item.quantity}
+                                min="1"
+                                onChange={(e) =>
+                                  handleQuantityInputChange(
+                                    item._id,
+                                    e.target.value
+                                  )
+                                }
+                                onBlur={(e) => {
+                                  if (!e.target.value || e.target.value < 1) {
+                                    handleQuantityInputChange(item._id, "1");
+                                  }
+                                }}
+                              />
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => updateQuantity(item._id, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div className="me-3 text-end">
+                              <strong>{formatPrice(getItemTotal(item))}</strong>
+                            </div>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => removeItem(item._id)}
+                            >
+                              Xóa
+                            </button>
                           </div>
                         </div>
-                        <div className="me-3 d-flex align-items-center">
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => updateQuantity(item._id, -1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            className="form-control mx-2 text-center"
-                            style={{ width: "60px" }}
-                            value={item.quantity}
-                            min="1"
-                            onChange={(e) =>
-                              handleQuantityInputChange(
-                                item._id,
-                                e.target.value
-                              )
-                            }
-                            onBlur={(e) => {
-                              if (!e.target.value || e.target.value < 1) {
-                                handleQuantityInputChange(item._id, "1");
-                              }
-                            }}
-                          />
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => updateQuantity(item._id, 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <div className="me-3 text-end">
-                          <strong>{formatPrice(getItemTotal(item))}</strong>
-                        </div>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => removeItem(item._id)}
-                        >
-                          Xóa
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
+                  </div>
+                );
+              })
+            ) : (
+              <div className="card">
                 <div className="card-body text-center">Giỏ hàng trống.</div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* TỔNG ĐƠN HÀNG + THỐNG KÊ */}
@@ -419,7 +567,7 @@ const ShoppingCart = ({ userId }) => {
                       type="date"
                       value={rentalDate}
                       onChange={(e) => setRentalDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
+                      min={tomorrowStr}
                       style={{
                         width: "100%",
                         padding: "0.5rem",
@@ -489,6 +637,14 @@ const ShoppingCart = ({ userId }) => {
                   </div>
                 )}
 
+                {selectedStoreId && (
+                  <div className="alert alert-success small mb-3">
+                    <strong>Cửa hàng đã chọn:</strong>{" "}
+                    {storeData.find((store) => store._id === selectedStoreId)
+                      ?.name || "Không rõ"}
+                  </div>
+                )}
+
                 <p className="d-flex justify-content-between">
                   <span>Tạm tính:</span>
                   <strong>{formatPrice(subtotal)}</strong>
@@ -499,23 +655,28 @@ const ShoppingCart = ({ userId }) => {
                 </p>
                 <hr />
                 <p className="d-flex justify-content-between">
-                  <span>Tổng cộng:</span>
-                  <strong className="text-success">{formatPrice(total)}</strong>
+                  <span>Tổng tiền thuê:</span>
+                  <strong className="text-success">
+                    {formatPrice(totalRental)}
+                  </strong>
                 </p>
                 <p className="d-flex justify-content-between text-muted">
                   <span>Tiền cọc (50%):</span>
-                  <span>{formatPrice(Math.round(total * 0.5))}</span>
+                  <span>{formatPrice(deposit)}</span>
+                </p>
+                <hr />
+                <p className="d-flex justify-content-between text-muted">
+                  <span>Tổng cộng:</span>
+                  <span>{formatPrice(total)}</span>
                 </p>
                 <button
                   className={`btn btn-block ${
-                    selectedItems.length === 0 || !rentalDate || !returnDate
+                    selectedItems.length === 0
                       ? "btn-secondary disabled"
                       : "btn-primary"
                   }`}
                   onClick={handlePayment}
-                  disabled={
-                    selectedItems.length === 0 || !rentalDate || !returnDate
-                  }
+                  disabled={selectedItems.length === 0}
                 >
                   Thanh toán
                 </button>
@@ -527,6 +688,10 @@ const ShoppingCart = ({ userId }) => {
               <div className="card-header">Thống kê giỏ hàng</div>
               <div className="card-body text-center">
                 <p>
+                  <strong>{Object.keys(groupedCartData).length}</strong> cửa
+                  hàng
+                </p>
+                <p>
                   <strong>{cartData.length}</strong> loại sản phẩm
                 </p>
                 <p>
@@ -534,6 +699,18 @@ const ShoppingCart = ({ userId }) => {
                     {cartData.reduce((sum, item) => sum + item.quantity, 0)}
                   </strong>{" "}
                   tổng số lượng
+                </p>
+                <p>
+                  <strong>{selectedItems.length}</strong> sản phẩm đã chọn
+                </p>
+                <p>
+                  <strong>
+                    {selectedItems.reduce(
+                      (sum, item) => sum + item.quantity,
+                      0
+                    )}
+                  </strong>{" "}
+                  số lượng đã chọn
                 </p>
                 {rentalDays > 0 && (
                   <p>

@@ -1,11 +1,12 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaChartBar,
   FaBoxOpen,
   FaMoneyBill,
   FaStore,
   FaUsers,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 const linkStyle = {
@@ -30,24 +31,48 @@ const hoverStyle = {
   color: "#fff",
 };
 
+const logoutStyle = {
+  ...linkStyle,
+  backgroundColor: "#ff4d4d",
+  color: "#fff",
+};
+
+const logoutHoverStyle = {
+  ...logoutStyle,
+  backgroundColor: "#cc0000",
+};
+
 const AdminSidebar = () => {
-  const StyledNavLink = ({ to, icon: Icon, children }) => (
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    console.log("Token removed:", localStorage.getItem("token"));
+    navigate("/");
+    window.location.href = "/";
+  };
+
+  const StyledNavLink = ({ to, icon: Icon, children, onClick, isLogout }) => (
     <NavLink
       to={to}
       style={({ isActive }) => ({
-        ...linkStyle,
-        ...(isActive ? activeLinkStyle : {}),
+        ...(isLogout ? logoutStyle : linkStyle),
+        ...(isActive && !isLogout ? activeLinkStyle : {}),
       })}
       onMouseEnter={(e) => {
         if (!e.target.classList.contains("active")) {
-          Object.assign(e.target.style, hoverStyle);
+          Object.assign(
+            e.target.style,
+            isLogout ? logoutHoverStyle : hoverStyle
+          );
         }
       }}
       onMouseLeave={(e) => {
         if (!e.target.classList.contains("active")) {
-          Object.assign(e.target.style, linkStyle);
+          Object.assign(e.target.style, isLogout ? logoutStyle : linkStyle);
         }
       }}
+      onClick={onClick}
     >
       <Icon style={{ marginRight: "10px", fontSize: "18px" }} />
       {children}
@@ -90,8 +115,14 @@ const AdminSidebar = () => {
         <StyledNavLink to="/admin/users" icon={FaUsers}>
           Quản lý người dùng
         </StyledNavLink>
-        <StyledNavLink to="/admin/rental-dashboard" icon={FaUsers}>
-          Quản lý đơn thuê
+
+        <StyledNavLink to="/admin/deposit-dashboard" icon={FaMoneyBill}>
+          Quản lý tiền đặt cọc
+        </StyledNavLink>
+      </div>
+      <div style={{ marginTop: "auto" }}>
+        <StyledNavLink icon={FaSignOutAlt} onClick={handleLogout} isLogout>
+          Đăng xuất
         </StyledNavLink>
       </div>
     </div>

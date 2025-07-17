@@ -139,7 +139,7 @@ const ProductDetail = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:9999/cart/add-to-cart",
+        "https://hireyourstyle-backend.onrender.com/cart/add-to-cart",
         {
           productId: productId,
           storeId: storeId,

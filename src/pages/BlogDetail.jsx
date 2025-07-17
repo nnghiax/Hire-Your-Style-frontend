@@ -13,7 +13,7 @@ export default function BlogDetail() {
   useEffect(() => {
     const fetchBlogDetail = async () => {
       try {
-        const res = await axios.get(`http://localhost:9999/blog/detail/${blogId}`);
+        const res = await axios.get(`https://hireyourstyle-backend.onrender.com/blog/detail/${blogId}`);
         setBlog(res.data.data);
       } catch (error) {
         console.error('Lỗi khi tải chi tiết bài viết:', error);

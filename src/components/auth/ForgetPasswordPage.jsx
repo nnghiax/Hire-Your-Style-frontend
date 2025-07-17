@@ -1,89 +1,93 @@
-import React from "react";
-import { Card, Button, Form } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Container, Row, Col, Form, Button, Alert, Image } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundImage: `url('https://res.cloudinary.com/dj2liaz6d/image/upload/v1748015469/hfi8c2ljhjhz0u2vcacd.jpg')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-  },
-  card: {
-    borderRadius: "1rem",
-    padding: "2rem",
-    width: "100%",
-    maxWidth: "400px",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-  },
-  inputGroup: {
-    display: "flex",
-    alignItems: "center",
-    borderBottom: "1px solid #ced4da",
-    marginBottom: "1.5rem",
-  },
-  inputIcon: {
-    marginRight: "0.5rem",
-    color: "#6c757d",
-  },
-  input: {
-    border: "none",
-    outline: "none",
-    width: "100%",
-    padding: "0.5rem 0",
-  },
-  resetButton: {
-    width: "100%",
-    padding: "0.75rem",
-    borderRadius: "2rem",
-    background: "linear-gradient(to right, #36d1dc, #5b86e5)",
-    color: "#fff",
-    border: "none",
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-  link: {
-    color: "#007bff",
-    textDecoration: "none",
-  },
-};
+function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState(null);
+  const [variant, setVariant] = useState('danger');
+  const navigate = useNavigate();
 
-const ForgetPasswordPage = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setMessage('Vui lòng nhập email.');
+      setVariant('danger');
+      return;
+    }
+
+    try {
+      const res = await axios.post('https://hireyourstyle-backend.onrender.com/auth/forgot-password', { email });
+      setMessage(res.data.message);
+      setVariant('success');
+      setTimeout(() => navigate('/reset-password'), 2000);
+    } catch (error) {
+      const errMsg = error.response?.data?.message || 'Đã xảy ra lỗi';
+      setMessage(errMsg);
+      setVariant('danger');
+    }
+  };
+
   return (
-    <div style={styles.page}>
-      <Card style={styles.card}>
-        <Card.Title className="text-center mb-4">
-          <h3>Forget Password</h3>
-        </Card.Title>
+    <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center beige-bg">
+      <Row className="w-100 shadow rounded-5 overflow-hidden" style={{ maxWidth: '900px' }}>
+        <Col md={6} className="p-5 d-flex flex-column justify-content-center form-bg">
+          <div>
+            <h2 className="text-center mb-4 text-brown fw-bold">Quên mật khẩu</h2>
+            {message && <Alert variant={variant}>{message}</Alert>}
 
-        <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
-          <div style={styles.inputGroup}>
-            <input
-              type="email"
-              placeholder="Type your email"
-              style={styles.input}
-            />
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3" controlId="formEmail">
+                <Form.Label className="fw-semibold text-brown" style={{ float: 'left' }}>
+                  Email
+                </Form.Label>
+                <Form.Control
+                  type="email"
+                  placeholder="Nhập email của bạn"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-pill px-3 py-2"
+                />
+              </Form.Group>
+
+              <Button
+                type="submit"
+                className="w-100 rounded-pill py-2 text-white"
+                style={{ backgroundColor: '#7b4b27', border: 'none' }}
+              >
+                Gửi mã xác thực
+              </Button>
+
+              <div className="text-center mt-3">
+                <small className="text-muted">Đã có tài khoản? </small>
+                <span
+                  className="text-brown fw-semibold"
+                  role="button"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate('/login')}
+                >
+                  Đăng nhập
+                </span>
+              </div>
+            </Form>
           </div>
-        </Form.Group>
-
-        <Button style={styles.resetButton} className="mb-4">
-          RESET PASSWORD
-        </Button>
-
-        <div className="text-center">
-          <p className="text-muted mb-2">Remember your password?</p>
-          <Link to="/login" style={styles.link}>
-            LOGIN
-          </Link>
-        </div>
-      </Card>
-    </div>
+        </Col>
+        <Col md={6} className="d-none d-md-block p-0">
+          <Image
+            src="https://res.cloudinary.com/dj2liaz6d/image/upload/v1752235125/bvtpgmlfhckynwadrxr7.jpg"
+            alt="Forgot Password illustration"
+            fluid
+            style={{
+              height: '100%',
+              objectFit: 'cover',
+              filter: 'brightness(0.92)'
+            }}
+          />
+        </Col>
+      </Row>
+    </Container>
   );
-};
+}
 
-export default ForgetPasswordPage;
+export default ForgotPasswordPage;

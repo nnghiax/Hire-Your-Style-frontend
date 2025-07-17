@@ -19,8 +19,8 @@ export default function BlogList() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        console.log('Fetching blogs from http://localhost:9999/blog/public');
-        const res = await axios.get('http://localhost:9999/blog/public');
+        console.log('Fetching blogs from https://hireyourstyle-backend.onrender.com/blog/public');
+        const res = await axios.get('https://hireyourstyle-backend.onrender.com/blog/public');
         console.log('API Response:', res.data);
         if (res.data && Array.isArray(res.data.data)) {
           setBlogs(res.data.data);

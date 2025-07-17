@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Form, Button, Image, Alert, Card, Breadcrumb } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Image, Alert, Card, InputGroup } from "react-bootstrap";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "../css/ProfilePage.css"; 
+import "../css/ProfilePage.css";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -13,9 +14,22 @@ export default function ProfilePage() {
     district: "",
     city: "",
   });
+  const [phone, setPhone] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [showPasswords, setShowPasswords] = useState({
+    oldPassword: false,
+    newPassword: false,
+    confirmNewPassword: false,
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,13 +52,14 @@ export default function ProfilePage() {
           district: "",
           city: "",
         });
+        setPhone(userData.phone || "");
       } catch (error) {
         console.error("Error fetching user profile:", error);
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
           navigate("/login");
         }
-        setError("Failed to load user profile.");
+        setError("Không thể tải thông tin hồ sơ.");
       }
     };
 
@@ -60,11 +75,19 @@ export default function ProfilePage() {
     setError("");
     setSuccess("");
 
-    try {
+ try {
       const formData = new FormData();
       if (name) formData.append("name", name);
-      formData.append("address", JSON.stringify(address));
+      if (phone) formData.append("phone", String(phone)); 
+      const hasAddressData = Object.values(address).some((value) => value.trim() !== "");
+      if (hasAddressData) {
+        formData.append("address", JSON.stringify(address));
+      }
       if (avatar) formData.append("avatar", avatar);
+
+      for (let [key, value] of formData.entries()) {
+        console.log(`FormData ${key}: ${value}`);
+      }
 
       const res = await axios.put("https://hireyourstyle-backend.onrender.com/user/update", formData, {
         headers: {
@@ -72,6 +95,8 @@ export default function ProfilePage() {
           "Content-Type": "multipart/form-data",
         },
       });
+
+      console.log("Update response:", res.data);
 
       setUser(res.data.data);
       setName(res.data.data.name);
@@ -81,13 +106,45 @@ export default function ProfilePage() {
         district: "",
         city: "",
       });
+      setPhone(res.data.data.phone || "");
       setAvatar(null);
-      setSuccess("Profile updated successfully!");
-      setTimeout(() => setSuccess(""), 5000);
+      setSuccess("Cập nhật hồ sơ thành công!");
+      setTimeout(() => setSuccess(""), 4000);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setError(error.response?.data?.message || "Failed to update profile.");
+      setError(error.response?.data?.message || "Không thể cập nhật hồ sơ.");
       setTimeout(() => setError(""), 5000);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    try {
+      const res = await axios.post("https://hireyourstyle-backend.onrender.com/auth/change-password", passwordData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      setPasswordSuccess(res.data.message);
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+      setShowPasswords({
+        oldPassword: false,
+        newPassword: false,
+        confirmNewPassword: false,
+      });
+      setTimeout(() => setPasswordSuccess(""), 5000);
+    } catch (error) {
+      console.error("Error changing password:", error);
+      setPasswordError(error.response?.data?.message || "Không thể thay đổi mật khẩu.");
+      setTimeout(() => setPasswordError(""), 5000);
     }
   };
 
@@ -95,17 +152,40 @@ export default function ProfilePage() {
     setAvatar(e.target.files[0]);
   };
 
+  const handlePasswordChange = (e) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+  };
+
+  const toggleShowPassword = (field) => {
+    setShowPasswords({ ...showPasswords, [field]: !showPasswords[field] });
+  };
+
   if (!user) {
-    return <div className="text-center mt-5">Loading...</div>;
+    return <div className="text-center mt-5">Đang tải...</div>;
   }
 
   return (
     <div className="bg-white min-h-screen py-5" style={{ marginTop: '20px', color: '#1a202c', textAlign: 'left' }}>
       <Container className="main-body p-4">
-        <Breadcrumb>
-          <Breadcrumb.Item href="/" > Trang chủ</Breadcrumb.Item>
-
-        </Breadcrumb>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <a
+            href="/"
+            style={{
+              color: "#8A784E",
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+            onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+          >
+            <i className="fas fa-home me-2" style={{ marginRight: "0.5rem" }}></i>
+            Trang chủ
+          </a>
+        </div>
 
         <Row className="gutters-sm">
           <Col md={4} className="mb-3">
@@ -143,7 +223,7 @@ export default function ProfilePage() {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your name"
+                        placeholder="Nhập tên của bạn"
                         className="mb-2"
                       />
                     </div>
@@ -175,7 +255,7 @@ export default function ProfilePage() {
                         onChange={(e) =>
                           setAddress({ ...address, street: e.target.value })
                         }
-                        placeholder="Enter street"
+                        placeholder="Nhập số nhà, tên đường"
                         className="mb-2"
                       />
                       <Form.Control
@@ -184,7 +264,7 @@ export default function ProfilePage() {
                         onChange={(e) =>
                           setAddress({ ...address, ward: e.target.value })
                         }
-                        placeholder="Enter ward"
+                        placeholder="Nhập phường/xã"
                         className="mb-2"
                       />
                       <Form.Control
@@ -193,7 +273,7 @@ export default function ProfilePage() {
                         onChange={(e) =>
                           setAddress({ ...address, district: e.target.value })
                         }
-                        placeholder="Enter district"
+                        placeholder="Nhập quận/huyện"
                         className="mb-2"
                       />
                       <Form.Control
@@ -202,7 +282,22 @@ export default function ProfilePage() {
                         onChange={(e) =>
                           setAddress({ ...address, city: e.target.value })
                         }
-                        placeholder="Enter city"
+                        placeholder="Nhập tỉnh/thành phố"
+                        className="mb-2"
+                      />
+                    </div>
+                  </div>
+                  <hr />
+                  <div className="row mb-3">
+                    <div className="col-sm-3">
+                      <h6 className="mb-0">Số điện thoại</h6>
+                    </div>
+                    <div className="col-sm-9 text-secondary">
+                      <Form.Control
+                        type="text"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Nhập số điện thoại"
                         className="mb-2"
                       />
                     </div>
@@ -223,7 +318,88 @@ export default function ProfilePage() {
                   </div>
                   <div className="text-end">
                     <Button variant="info" type="submit">
-                      Cập nhật
+                      Cập nhật hồ sơ
+                    </Button>
+                  </div>
+                </Form>
+              </Card.Body>
+            </Card>
+
+            <Card className="mb-3 shadow-sm border">
+              <Card.Body>
+                <h5 className="mb-4">Thay đổi mật khẩu</h5>
+                {passwordError && <Alert variant="danger">{passwordError}</Alert>}
+                {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
+                <Form onSubmit={handlePasswordSubmit}>
+                  <div className="row mb-3">
+                    <div className="col-sm-3">
+                      <h6 className="mb-0">Mật khẩu cũ</h6>
+                    </div>
+                    <div className="col-sm-9 text-secondary">
+                      <InputGroup className="mb-2">
+                        <Form.Control
+                          type={showPasswords.oldPassword ? "text" : "password"}
+                          name="oldPassword"
+                          value={passwordData.oldPassword}
+                          onChange={handlePasswordChange}
+                          placeholder="Nhập mật khẩu cũ"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => toggleShowPassword("oldPassword")}
+                        >
+                          {showPasswords.oldPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
+                    </div>
+                  </div>
+                  <div className="row mb-3">
+                    <div className="col-sm-3">
+                      <h6 className="mb-0">Mật khẩu mới</h6>
+                    </div>
+                    <div className="col-sm-9 text-secondary">
+                      <InputGroup className="mb-2">
+                        <Form.Control
+                          type={showPasswords.newPassword ? "text" : "password"}
+                          name="newPassword"
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
+                          placeholder="Nhập mật khẩu mới"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => toggleShowPassword("newPassword")}
+                        >
+                          {showPasswords.newPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
+                    </div>
+                  </div>
+                  <div className="row mb-3">
+                    <div className="col-sm-3">
+                      <h6 className="mb-0">Xác nhận mật khẩu mới</h6>
+                    </div>
+                    <div className="col-sm-9 text-secondary">
+                      <InputGroup className="mb-2">
+                        <Form.Control
+                          type={showPasswords.confirmNewPassword ? "text" : "password"}
+                          name="confirmNewPassword"
+                          value={passwordData.confirmNewPassword}
+                          onChange={handlePasswordChange}
+                          placeholder="Xác nhận mật khẩu mới"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => toggleShowPassword("confirmNewPassword")}
+                        >
+                          {showPasswords.confirmNewPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <Button variant="info" type="submit">
+                      Thay đổi mật khẩu
                     </Button>
                   </div>
                 </Form>
